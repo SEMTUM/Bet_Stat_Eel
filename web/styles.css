@@ -1,0 +1,371 @@
+/* 
+* CSS Переменные для цветовой схемы 
+* Позволяют легко изменять цвета во всем приложении
+*/
+:root {
+    --bg-dark: #121212;             /* Основной фон страницы */
+    --surface: #1e1e1e;            /* Фон карточек */
+    --surface-light: #2d2d2d;      /* Фон элементов внутри карточек */
+    --border: #333;                /* Цвет границ */
+    --text-primary: #d4d4d4;       /* Основной цвет текста */
+    --text-secondary: #999999;     /* Вторичный цвет текста (подписи, иконки) */
+    --accent: #6e6e6e;            /* Акцентный цвет кнопок */
+    --accent-hover:#4169E1;      /* Цвет кнопок при наведении */
+    --positive: #4CAF50;         /* Цвет для положительных значений */
+    --negative: #f44336;        /* Цвет для отрицательных значений */
+    --neutral: #FFC107;        /* Нейтральный цвет (возвраты) */
+    --win-bg: rgba(76, 175, 80, 0.1);      /* Фон для выигрышных ставок */
+    --loss-bg: rgba(244, 67, 54, 0.1);    /* Фон для проигрышных ставок */
+    --return-bg: rgba(255, 193, 7, 0.1);  /* Фон для возвращенных ставок */
+}
+
+/* Основные стили страницы */
+body {
+    font-family:  Arial, 'Segoe UI',sans-serif;  /* Шрифт по умолчанию */
+    background-color: var(--bg-dark);            /* Темный фон страницы */
+    color: var(--text-primary);                 /* Светлый цвет текста */
+    margin: 0;                                 /* Убираем отступы по умолчанию */
+    padding: 20px;                            /* Внутренние отступы страницы */
+    line-height: 1.6;                        /* Межстрочный интервал */
+}
+
+/* Контейнер для центрирования контента */
+.container {
+    max-width: 1200px;   /* Максимальная ширина контента */
+    margin: 0 auto;     /* Центрирование по горизонтали */
+}
+
+/* Заголовок страницы */
+h1 {
+    color: rgb(212, 212, 212);  /* Цвет заголовка */
+    margin-top: 0;              /* Убираем отступ сверху */
+    text-align: center;         /* Выравнивание по центру */
+    font-size: 1.2rem;        /* Размер шрифта */
+    font-style: normal;      /* Обычное начертание */
+    font-family: 'Arial', 'Verdana', sans-serif;  /* Шрифт заголовка */
+}
+
+/* Подзаголовки разделов */
+h2 {
+   color: rgb(185, 184, 184);  /* Цвет подзаголовка */
+   font-family: 'Arial', 'Verdana', sans-serif;  /* Шрифт */
+   font-weight: normal;       /* Нормальная толщина шрифта */
+   margin-top: 0;            /* Убираем отступ сверху */
+   text-align: left;        /* Выравнивание по левому краю */
+   font-size: 1.0rem;     /* Размер шрифта */
+   font-style: normal;   /* Обычное начертание */
+}
+
+/* Карточки - основные блоки интерфейса */
+.card {
+    background-color: var(--surface);       /* Фон карточки */
+    border-radius: 8px;                   /* Скругление углов */
+    padding: 20px;                      /* Внутренние отступы */
+    margin-bottom: 20px;               /* Отступ снизу */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);  /* Тень карточки */
+}
+
+/* Форма добавления ставки */
+.compact-form {
+    display: flex;          /* Гибкий контейнер */
+    align-items: center;    /* Выравнивание элементов по центру */
+    gap: 8px;             /* Расстояние между элементами */
+    flex-wrap: wrap;      /* Перенос на новую строку при нехватке места */
+}
+
+/* Поле формы */
+.form-field {
+    position: relative;   /* Для позиционирования иконок */
+    display: flex;       /* Гибкий контейнер */
+    align-items: center; /* Выравнивание по центру */
+    flex: 1;           /* Растягивается на доступное пространство */
+    min-width: 90px;   /* Минимальная ширина поля */
+}
+
+/* Поле ввода */
+.compact-input {
+    width: 100%;                      /* Занимает всю доступную ширину */
+    padding: 10px;                   /* Внутренние отступы */
+    background: var(--surface-light); /* Фон поля */
+    border: 1px solid var(--border); /* Граница */
+    border-radius: 6px;             /* Скругление углов */
+    color: var(--text-primary);    /* Цвет текста */
+    font-size: 0.9rem;            /* Размер шрифта */
+    transition: all 0.01s ease;  /* Плавные анимации */
+    text-align: center;         /* Выравнивание текста по центру */
+}
+
+/* Стили для поля ввода при фокусе */
+.compact-input:focus {
+    outline: none;                      /* Убираем стандартный outline */
+    border-color: var(--accent);       /* Изменяем цвет границы */
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0); /* Убираем тень */
+}
+
+/* Специальный класс для поля ввода даты */
+.date-input {
+    text-align: center;  /* Выравнивание по центру */
+}
+
+/* Выпадающий список */
+.compact-select {
+    width: 100%;                      /* Занимает всю доступную ширину */
+    padding: 10px 10px 10px 32px;    /* Отступы, слева больше для иконки */
+    background: var(--surface-light); /* Фон */
+    border: 1px solid var(--border); /* Граница */
+    border-radius: 6px;             /* Скругление углов */
+    color: var(--text-secondary);    /* Цвет текста */
+    font-size: 0.9rem;           /* Размер шрифта */
+    appearance: none;           /* Убираем стандартный вид */
+    cursor: pointer;           /* Курсор-указатель */
+    transition: all 0.2s ease; /* Плавные анимации */
+    text-align: center;       /* Выравнивание текста по центру */
+}
+
+/* Стили для выпадающего списка при фокусе */
+.compact-select:focus {
+    outline: none;                      /* Убираем стандартный outline */
+    border-color: var(--accent);       /* Изменяем цвет границы */
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0); /* Убираем тень */
+}
+
+/* Стили для выпадающего списка */
+.compact-select option {
+    outline: none;                      /* Убираем стандартный outline */
+    border-color: var(--accent);       /* Изменяем цвет границы */
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0); /* Убираем тень */
+    background: var(--surface-light); /* Фон */
+    color: var(--text-primary); /* Цвет текста пунктов */
+}
+
+/* Стиль для выбранного/деактивированного пункта */
+.compact-select option:disabled {
+    outline: none;                      /* Убираем стандартный outline */
+    border-color: var(--accent);       /* Изменяем цвет границы */
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0); /* Убираем тень */
+    background: var(--surface-light); /* Фон */
+    color: var(--text-primary); /* Цвет текста пунктов */
+    
+}
+
+/* Иконки внутри полей формы */
+.field-icon {
+    position: absolute;  /* Абсолютное позиционирование */
+    left: 10px;        /* Отступ слева */
+    color: var(--text-secondary);  /* Цвет иконки */
+    font-size: 0.9rem;           /* Размер иконки */
+    pointer-events: none;       /* Игнорирование кликов */
+}
+
+/* Кнопка добавления */
+.add-btn {
+    background-color: var(--surface-light);  /* Фон кнопки */
+    color: var(--text-primary);          /* Цвет текста */
+    border: 1px solid var(--border);
+    padding: 10px 15px;         /* Внутренние отступы */
+    border-radius: 6px;       /* Скругление углов */
+    cursor: pointer;          /* Курсор-указатель */
+    font-weight: 300;       /* Жирный шрифт */
+    font-size: 0.9rem;     /* Размер шрифта */
+    transition: all 0.1s ease;  /* Плавные анимации */
+    display: flex;         /* Гибкий контейнер */
+    align-items: center;  /* Выравнивание по центру */
+    gap: 8px;           /* Расстояние между иконкой и текстом */
+    white-space: nowrap; /* Запрет переноса текста */
+    margin-left: 0px;   /* Отступ слева */
+}
+
+/* Кнопка при наведении */
+.add-btn:hover {
+    background-color: var(--accent-hover);  /* Изменяем фон */
+    transform: translateY(-1px);           /* Легкий подъем */
+}
+
+/* Сообщение об ошибке */
+.error-tooltip {
+    position: absolute;     /* Абсолютное позиционирование */
+    top: 100%;            /* Под полем ввода */
+    left: 0;            /* Выравнивание по левому краю */
+    background: var(--negative);  /* Красный фон */
+    color: white;               /* Белый текст */
+    padding: 5px 8px;         /* Внутренние отступы */
+    border-radius: 4px;      /* Скругление углов */
+    font-size: 0.8rem;     /* Размер шрифта */
+    margin-top: 2px;      /* Отступ сверху */
+    z-index: 10;         /* Поверх других элементов */
+    display: none;      /* По умолчанию скрыт */
+}
+
+/* Сетка для статистики */
+.stats-grid {
+    display: grid;                     /* Грид-контейнер */
+    grid-template-columns: repeat(4, 1fr);  /* 4 колонки */
+    gap: 15px;                       /* Расстояние между элементами */
+    margin-bottom: 15px;            /* Отступ снизу */
+}
+
+/* Карточка статистики */
+.stat-card {
+    background-color: var(--surface-light);  /* Фон */
+    border-radius: 6px;                    /* Скругление углов */
+    padding: 15px;                       /* Внутренние отступы */
+    text-align: center;                 /* Выравнивание по центру */
+}
+
+/* Заголовок карточки статистики */
+.stat-card h3 {
+    margin: 0 0 10px 0;              /* Отступы */
+    color: var(--text-secondary);   /* Цвет текста */
+    font-size: 1rem;               /* Размер шрифта */
+}
+
+/* Значение в карточке статистики */
+.stat-value {
+    font-size: 1.5rem;       /* Крупный шрифт */
+    font-weight: normal;     /* Нормальная толщина */
+    margin: 0;             /* Убираем отступы */
+}
+
+/* Таблица истории ставок */
+table {
+    width: 100%;           /* На всю ширину */
+    border-collapse: collapse;  /* Схлопывание границ */
+    margin-top: 15px;         /* Отступ сверху */
+    font-size: 0.9rem;       /* Размер шрифта */
+}
+
+/* Ячейки таблицы */
+th, td {
+    padding: 12px 15px;         /* Внутренние отступы */
+    text-align: left;          /* Выравнивание по левому краю */
+    border-bottom: 1px solid var(--border);  /* Граница снизу */
+}
+
+/* Заголовки таблицы */
+th {
+    background-color: var(--surface-light);  /* Фон */
+    color: var(--text-secondary);          /* Цвет текста */
+    position: sticky;                    /* Липкий заголовок */
+    top: 0;                            /* Прилипает к верху */
+    font-weight: 600;                 /* Полужирный шрифт */
+}
+
+/* Эффект при наведении на строку */
+tr:hover {
+    background-color: var(--surface-light);  /* Подсветка */
+}
+
+/* Стили для разных типов ставок */
+.win {
+    background-color: var(--win-bg);  /* Фон для выигрышей */
+}
+
+.loss {
+    background-color: var(--loss-bg);  /* Фон для проигрышей */
+}
+
+.return {
+    background-color: var(--return-bg);  /* Фон для возвратов */
+}
+
+/* Кнопки действий */
+.action-btn {
+    color: #888;             /* Цвет иконки */
+    transition: color 0.2s;  /* Плавное изменение цвета */
+}
+
+/* Кнопка при наведении */
+.action-btn:hover {
+    color: var(--negative);  /* Красный цвет */
+}
+
+/* График */
+.chart-img {
+    width: 100%;           /* На всю ширину */
+    height: auto;         /* Автоматическая высота */
+    max-height: 400px;   /* Максимальная высота */
+    object-fit: contain; /* Сохранять пропорции */
+}
+
+/* Вспомогательные классы для цветов текста */
+.positive { color: var(--positive); }  /* Зеленый */
+.negative { color: var(--negative); }  /* Красный */
+.neutral { color: var(--neutral); }   /* Желтый */
+.text-center { text-align: center; }  /* Выравнивание по центру */
+
+/* Стили для подвала */
+.footer {
+    text-align: center;
+    margin-top: 30px;
+    padding: 15px 0;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    border-top: 1px solid var(--border);
+}
+
+.footer a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.footer a:hover {
+    color: var(--accent-hover);
+}
+
+/* Кнопки Excel */
+.excel-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 15px;
+}
+
+.excel-btn {
+    background-color: var(--surface-light);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.1s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+}
+
+.excel-btn:hover {
+    background-color: var(--accent-hover);
+}
+
+.excel-btn i {
+    font-size: 0.9rem;
+}
+
+/* Адаптивность для средних экранов */
+@media (max-width: 900px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);  /* 2 колонки */
+    }
+    
+    .compact-form {
+        gap: 10px;  /* Увеличиваем расстояние между полями */
+    }
+    
+    .form-field {
+        min-width: 100%;  /* Поля на всю ширину */
+    }
+}
+
+/* Адаптивность для маленьких экранов */
+@media (max-width: 600px) {
+    .stats-grid {
+        grid-template-columns: 1fr;  /* 1 колонка */
+    }
+    
+    .excel-buttons {
+        justify-content: center;
+    }
+}

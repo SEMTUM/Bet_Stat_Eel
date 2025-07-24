@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Статистика ставок на Спортивные События от Bet Bot Lab</title>
+    <!-- Подключаем иконки Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Подключаем CSS стили -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Статистика ставок на Спортивные События от Bet Bot Lab</h1>
+        
+        <!-- Блок статистики -->
+        <div class="card">
+            <div class="stats-grid" id="stats-grid">
+                <!-- Карточки статистики будут заполнены JavaScript -->
+            </div>
+        </div>
+        
+        <!-- Блок с графиком -->
+        <div class="card" id="chart-container" style="display: none;">
+            <img id="chart-img" alt="График изменения банка" class="chart-img">
+        </div>
+        
+        <!-- Форма добавления ставки -->
+        <div class="card">
+            <h2>Добавить ставку</h2>
+            <form class="compact-form" id="bet-form">
+                <!-- Поле даты -->
+                <div class="form-field">
+                    <input type="text" id="date" name="date" class="compact-input date-input" placeholder="дд.мм.гг" required>
+                    <div class="error-tooltip" id="date-error">Введите в формате 17.07.25</div>
+                </div>
+                
+                <!-- Поле хозяев -->
+                <div class="form-field">
+                    <i class="fas fa-home field-icon"></i>
+                    <input type="text" id="home_team" name="home_team" class="compact-input" placeholder="Хозяева" required>
+                </div>
+                
+                <!-- Поле гостей -->
+                <div class="form-field">
+                    <i class="fas fa-plane-departure field-icon"></i>
+                    <input type="text" id="away_team" name="away_team" class="compact-input" placeholder="Гости" required>
+                </div>
+                
+                <!-- Поле индекса -->
+                <div class="form-field">
+                    <i class="fas fa-chart-line field-icon"></i>
+                    <input type="number" step="0.1" id="index_val" name="index_val" class="compact-input" placeholder="Индекс" required>
+                </div>
+                
+                <!-- Поле коэффициента -->
+                <div class="form-field">
+                    <i class="fas fa-percentage field-icon"></i>
+                    <input type="number" step="0.01" id="coefficient" name="coefficient" class="compact-input" placeholder="Кэф" required>
+                </div>
+                
+                <!-- Поле суммы ставки -->
+                <div class="form-field">
+                    <i class="fas fa-ruble-sign field-icon"></i>
+                    <input type="number" id="bet_amount" name="bet_amount" class="compact-input" placeholder="Сумма" required>
+                </div>
+                
+                <!-- Выпадающий список результата -->
+                <div class="form-field">
+                    <i class="fas fa-trophy field-icon"></i>
+                    <select id="result" name="result" class="compact-select" required>
+                        <option value="Результат">Результат</option>
+                        <option value="win">Win</option>
+                        <option value="loss">Loss</option>
+                        <option value="return">Return</option>
+                    </select>
+                </div>
+                
+                <!-- Кнопка добавления -->
+                <button type="submit" class="add-btn">
+                    <i class="fas fa-plus"></i> Добавить
+                </button>
+            </form>
+        </div>
+        
+        <!-- История ставок -->
+        <div class="card">
+            <h2>История ставок</h2>
+            <div id="bets-table-container">
+                <!-- Таблица будет заполнена JavaScript -->
+                <p id="no-bets-message">Загрузка данных...</p>
+                <table id="bets-table" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>Дата</th>
+                            <th>Матч</th>
+                            <th>Индекс</th>
+                            <th>Кэф</th>
+                            <th>Ставка</th>
+                            <th>Прибыль</th>
+                            <th>Результат</th>
+                            <th class="text-center">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bets-table-body">
+                        <!-- Строки будут добавлены через JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Кнопки для работы с Excel -->
+            <div class="excel-buttons">
+                <!-- Кнопка импорта из Excel -->
+                <button class="excel-btn" id="import-excel-btn" title="Загрузить данные из Excel (старые данные будут удалены)">
+                    <i class="fa fa-download"></i> Загрузить Excel
+                </button>
+
+                <!-- Кнопка экспорта в Excel -->
+                <button class="excel-btn" id="export-excel-btn" title="Скачать историю в Excel">
+                    <i class="fas fa-save"></i> Сохранить в Excel
+                </button>
+                
+                <!-- Скрытый input для загрузки файла -->
+                <input type="file" id="excel-file-input" accept=".xlsx" style="display: none;">
+            </div>
+        </div>
+
+        <!-- Подвал -->
+        <div class="footer">
+            <a href="https://t.me/betbotlab" target="_blank">@betbotlab</a> – Напишем Любые Программы и Telegram Боты по Вашим Стратегиям!
+        </div>
+    </div>
+
+    <!-- Подключаем JavaScript -->
+    <script src="scripts.js"></script>
+    <!-- Подключаем Eel -->
+    <script type="text/javascript" src="/eel.js"></script>
+</body>
+</html>
