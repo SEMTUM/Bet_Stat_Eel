@@ -410,10 +410,11 @@ if __name__ == '__main__':
     try:
         eel.start('index.html',
                  size=(1200, 800),
-                 mode='chrome',
+                 mode='default',
+                 host='localhost',
+                 port=8080,
                  close_callback=close_callback,
-                 suppress_error=True,
-                 port=0)
+                 suppress_error=True)
     except Exception as e:
         print(f"Ошибка при запуске: {e}")
     finally:
