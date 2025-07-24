@@ -1,4 +1,5 @@
 import os
+import sys
 import sqlite3
 from datetime import datetime
 import matplotlib
@@ -10,13 +11,46 @@ from collections import namedtuple
 import pandas as pd
 import eel
 
-# Инициализация Eel
-eel.init('web')
+# Функция для корректного определения путей в скомпилированном приложении
+def resource_path(relative_path):
+    """Получает абсолютный путь для работы в dev и после компиляции"""
+    try:
+        # PyInstaller создает временную папку в _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
+
+# Инициализация Eel с правильными путями
+eel.init(resource_path('web'))
+
+def get_db_path():
+    """Возвращает правильный путь к базе данных в зависимости от режима работы"""
+    if getattr(sys, 'frozen', False):
+        # Если приложение скомпилировано, используем папку с исполняемым файлом
+        application_path = os.path.dirname(sys.executable)
+    else:
+        # В режиме разработки используем текущую папку
+        application_path = os.path.dirname(os.path.abspath(__file__))
+    
+    return os.path.join(application_path, 'bets.db')
+
+def check_and_create_db():
+    """Проверяет наличие БД и создает новую при необходимости"""
+    db_path = get_db_path()
+    
+    if not os.path.exists(db_path):
+        print(f"База данных не найдена, создаем новую: {db_path}")
+        init_db()
+    else:
+        print(f"Используем существующую базу данных: {db_path}")
 
 # Подключение к базе данных
 def get_db_connection():
-    """Создает и возвращает соединение с базой данных SQLite"""
-    conn = sqlite3.connect('bets.db')
+    """Создает соединение с базой данных"""
+    db_path = get_db_path()
+    conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -38,6 +72,14 @@ def init_db():
             result TEXT NOT NULL
         )
     ''')
+    
+    # Можно добавить тестовые данные при первом запуске
+    cursor.execute('''
+        INSERT INTO bets (home_team, away_team, index_val, coefficient, bet_amount, date, result)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    ''', (
+        'Команда А', 'Команда Б', 1.5, 2.0, 1000, '2023-01-01', 'win'
+    ))
     
     conn.commit()
     conn.close()
@@ -385,9 +427,14 @@ def import_from_excel(excel_data):
         return {'success': False, 'message': f'Ошибка при импорте: {str(e)}'}
 
 if __name__ == '__main__':
-    # Инициализация базы данных
-    init_db()
+    # Проверяем и создаем БД при необходимости
+    check_and_create_db()
     
-    # Запуск приложения с указанием размера окна
+    # Запуск приложения
     print("Запуск приложения...")
-    eel.start('index.html', size=(1200, 800), mode='default', suppress_error=True)
+    eel.start('index.html', 
+              size=(1200, 800),
+              mode='default',
+              suppress_error=True,
+              port=0,  # Автоматический выбор порта
+              close_callback=lambda: os._exit(0))  # Корректное завершение
