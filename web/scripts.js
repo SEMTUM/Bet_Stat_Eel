@@ -1,238 +1,217 @@
-// Функция для форматирования чисел
-function formatNumber(num, decimals = 0) {
-    return num.toFixed(decimals).replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1 ');
-}
-
-// Функция для загрузки и отображения данных
-async function loadData() {
-    try {
-        // Получаем данные с сервера
-        const data = await eel.calculate_stats()();
-        
-        // Обновляем статистику
-        updateStats(data.stats);
-        
-        // Обновляем график
-        updateChart(data.chart_url);
-        
-        // Обновляем таблицу ставок
-        updateBetsTable(data.bets);
-    } catch (error) {
-        console.error('Ошибка при загрузке данных:', error);
-        alert('Произошла ошибка при загрузке данных. Пожалуйста, попробуйте снова.');
-    }
-}
-
-// Обновление статистики
-function updateStats(stats) {
-    const statsGrid = document.getElementById('stats-grid');
-    
-    // Очищаем предыдущие данные
-    statsGrid.innerHTML = '';
-    
-    // Создаем карточки статистики
-    const statCards = [
-        {
-            title: 'Прибыль',
-            value: stats.total_profit,
-            className: stats.total_profit >= 0 ? 'positive' : 'negative',
-            format: (val) => `${val >= 0 ? '+' : ''}${formatNumber(val)}`
-        },
-        {
-            title: 'Проходимость',
-            value: stats.pass_rate,
-            format: (val) => `${val.toFixed(1)}%`
-        },
-        {
-            title: 'Win / Loss / Return',
-            value: `${stats.won_bets}/${stats.total_bets - stats.won_bets - stats.returned_bets}/${stats.returned_bets}`,
-            className: 'text-center',
-            html: `<span class="positive">${stats.won_bets}</span> / 
-                   <span class="negative">${stats.total_bets - stats.won_bets - stats.returned_bets}</span> / 
-                   <span class="neutral">${stats.returned_bets}</span>`
-        },
-        {
-            title: 'Макс. Просадка',
-            value: stats.max_drawdown,
-            className: 'negative',
-            format: (val) => formatNumber(val)
-        },
-        {
-            title: 'ROI',
-            value: stats.roi,
-            className: stats.roi >= 0 ? 'positive' : 'negative',
-            format: (val) => `${val >= 0 ? '+' : ''}${val.toFixed(1)}%`
-        },
-        {
-            title: 'Ср. Коэффициент',
-            value: stats.avg_coefficient,
-            format: (val) => val.toFixed(2)
-        },
-        {
-            title: 'Серия Побед',
-            value: stats.win_streak,
-            className: 'positive'
-        },
-        {
-            title: 'Серия Поражений',
-            value: stats.loss_streak,
-            className: 'negative'
-        }
-    ];
-    
-    // Добавляем карточки в сетку
-    statCards.forEach(card => {
-        const statCard = document.createElement('div');
-        statCard.className = 'stat-card';
-        
-        const title = document.createElement('h3');
-        title.textContent = card.title;
-        statCard.appendChild(title);
-        
-        const value = document.createElement('p');
-        value.className = 'stat-value';
-        if (card.className) value.classList.add(card.className);
-        
-        if (card.html) {
-            value.innerHTML = card.html;
-        } else {
-            value.textContent = card.format ? card.format(card.value) : card.value;
-        }
-        
-        statCard.appendChild(value);
-        statsGrid.appendChild(statCard);
-    });
-}
-
-// Обновление графика
-function updateChart(chartUrl) {
-    const chartContainer = document.getElementById('chart-container');
-    const chartImg = document.getElementById('chart-img');
-    
-    if (chartUrl) {
-        chartImg.src = `data:image/png;base64,${chartUrl}`;
-        chartContainer.style.display = 'block';
-    } else {
-        chartContainer.style.display = 'none';
-    }
-}
-
-// Обновление таблицы ставок
-function updateBetsTable(bets) {
-    const tableBody = document.getElementById('bets-table-body');
-    const noBetsMessage = document.getElementById('no-bets-message');
-    const betsTable = document.getElementById('bets-table');
-    
-    // Очищаем таблицу
-    tableBody.innerHTML = '';
-    
-    if (bets && bets.length > 0) {
-        // Скрываем сообщение "Нет данных" и показываем таблицу
-        noBetsMessage.style.display = 'none';
-        betsTable.style.display = 'table';
-        
-        // Добавляем строки с данными
-        bets.forEach(bet => {
-            const row = document.createElement('tr');
-            
-            // Определяем класс строки в зависимости от результата
-            if (bet.result === 'win') {
-                row.classList.add('win');
-            } else if (bet.result === 'loss') {
-                row.classList.add('loss');
-            } else if (bet.result === 'return') {
-                row.classList.add('return');
-            }
-            
-            // Рассчитываем прибыль
-            let profit = 0;
-            let profitClass = '';
-            let resultText = '';
-            
-            if (bet.result === 'win') {
-                profit = bet.bet_amount * (bet.coefficient - 1);
-                profitClass = 'positive';
-                resultText = 'Выигрыш';
-            } else if (bet.result === 'loss') {
-                profit = -bet.bet_amount;
-                profitClass = 'negative';
-                resultText = 'Проигрыш';
-            } else {
-                profitClass = 'neutral';
-                resultText = 'Возврат';
-            }
-            
-            // Заполняем ячейки
-            row.innerHTML = `
-                <td>${bet.formatted_date}</td>
-                <td>${bet.home_team} - ${bet.away_team}</td>
-                <td>${parseFloat(bet.index_val).toFixed(2)}</td>
-                <td>${parseFloat(bet.coefficient).toFixed(2)}</td>
-                <td>${formatNumber(parseFloat(bet.bet_amount))}</td>
-                <td class="${profitClass}">
-                    ${bet.result === 'win' ? '+' : ''}${bet.result === 'loss' ? '-' : ''}${bet.result !== 'return' ? formatNumber(Math.abs(profit)) : '0'}
-                </td>
-                <td>${resultText}</td>
-                <td class="text-center">
-                    <a href="#" class="action-btn delete-btn" data-id="${bet.id}" title="Удалить">
-                        <i class="fas fa-trash"></i>
-                    </a>
-                </td>
-            `;
-            
-            tableBody.appendChild(row);
-        });
-        
-        // Добавляем обработчики событий для кнопок удаления
-        document.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.addEventListener('click', async function(e) {
-                e.preventDefault();
-                const betId = this.getAttribute('data-id');
-                
-                if (confirm('Вы уверены, что хотите удалить эту ставку?')) {
-                    try {
-                        const result = await eel.delete_bet(parseInt(betId))();
-                        if (result.success) {
-                            loadData(); // Перезагружаем данные
-                        } else {
-                            alert(result.message);
-                        }
-                    } catch (error) {
-                        console.error('Ошибка при удалении ставки:', error);
-                        alert('Произошла ошибка при удалении ставки.');
-                    }
-                }
-            });
-        });
-    } else {
-        // Показываем сообщение "Нет данных" и скрываем таблицу
-        noBetsMessage.textContent = 'Нет данных о ставках';
-        noBetsMessage.style.display = 'block';
-        betsTable.style.display = 'none';
-    }
-}
-
-// Функция валидации даты
-function validateDate(dateStr) {
-    // Заменяем запятые на точки для валидации
-    const normalizedDateStr = dateStr.replace(/,/g, '.');
-    const regex = /^\d{2}\.\d{2}\.\d{4}$/;
-    if (!regex.test(normalizedDateStr)) return false;
-    
-    const parts = normalizedDateStr.split('.');
-    const day = parseInt(parts[0], 10);
-    const month = parseInt(parts[1], 10);
-    const year = parseInt(parts[2], 10);
-    
-    if (month < 1 || month > 12) return false;
-    if (day < 1 || day > 31) return false;
-    
-    return true;
-}
-
-// Инициализация приложения
 document.addEventListener('DOMContentLoaded', function() {
-    // Загружаем данные при запуске
+    // Функция для форматирования чисел
+    function formatNumber(num, decimals = 0) {
+        return num.toFixed(decimals).replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1 ');
+    }
+
+    // Функция для загрузки и отображения данных
+    async function loadData() {
+        try {
+            const data = await eel.calculate_stats()();
+            updateStats(data.stats);
+            updateChart(data.chart_url);
+            updateBetsTable(data.bets);
+        } catch (error) {
+            console.error('Ошибка при загрузке данных:', error);
+            alert('Произошла ошибка при загрузке данных. Пожалуйста, попробуйте снова.');
+        }
+    }
+
+    // Обновление статистики
+    function updateStats(stats) {
+        const statsGrid = document.getElementById('stats-grid');
+        statsGrid.innerHTML = '';
+        
+        const statCards = [
+            {
+                title: 'Прибыль',
+                value: stats.total_profit,
+                className: stats.total_profit >= 0 ? 'positive' : 'negative',
+                format: (val) => `${val >= 0 ? '+' : ''}${formatNumber(val)}`
+            },
+            {
+                title: 'Проходимость',
+                value: stats.pass_rate,
+                format: (val) => `${val.toFixed(1)}%`
+            },
+            {
+                title: 'Win / Loss / Return',
+                value: `${stats.won_bets}/${stats.total_bets - stats.won_bets - stats.returned_bets}/${stats.returned_bets}`,
+                className: 'text-center',
+                html: `<span class="positive">${stats.won_bets}</span> / 
+                       <span class="negative">${stats.total_bets - stats.won_bets - stats.returned_bets}</span> / 
+                       <span class="neutral">${stats.returned_bets}</span>`
+            },
+            {
+                title: 'Макс. Просадка',
+                value: stats.max_drawdown,
+                className: 'negative',
+                format: (val) => formatNumber(val)
+            },
+            {
+                title: 'ROI',
+                value: stats.roi,
+                className: stats.roi >= 0 ? 'positive' : 'negative',
+                format: (val) => `${val >= 0 ? '+' : ''}${val.toFixed(1)}%`
+            },
+            {
+                title: 'Ср. Коэффициент',
+                value: stats.avg_coefficient,
+                format: (val) => val.toFixed(2)
+            },
+            {
+                title: 'Серия Побед',
+                value: stats.win_streak,
+                className: 'positive'
+            },
+            {
+                title: 'Серия Поражений',
+                value: stats.loss_streak,
+                className: 'negative'
+            }
+        ];
+        
+        statCards.forEach(card => {
+            const statCard = document.createElement('div');
+            statCard.className = 'stat-card';
+            
+            const title = document.createElement('h3');
+            title.textContent = card.title;
+            statCard.appendChild(title);
+            
+            const value = document.createElement('p');
+            value.className = 'stat-value';
+            if (card.className) value.classList.add(card.className);
+            
+            if (card.html) {
+                value.innerHTML = card.html;
+            } else {
+                value.textContent = card.format ? card.format(card.value) : card.value;
+            }
+            
+            statCard.appendChild(value);
+            statsGrid.appendChild(statCard);
+        });
+    }
+
+    // Обновление графика
+    function updateChart(chartUrl) {
+        const chartContainer = document.getElementById('chart-container');
+        const chartImg = document.getElementById('chart-img');
+        
+        if (chartUrl) {
+            chartImg.src = `data:image/png;base64,${chartUrl}`;
+            chartContainer.style.display = 'block';
+        } else {
+            chartContainer.style.display = 'none';
+        }
+    }
+
+    // Обновление таблицы ставок
+    function updateBetsTable(bets) {
+        const tableBody = document.getElementById('bets-table-body');
+        const noBetsMessage = document.getElementById('no-bets-message');
+        const betsTable = document.getElementById('bets-table');
+        
+        tableBody.innerHTML = '';
+        
+        if (bets && bets.length > 0) {
+            noBetsMessage.style.display = 'none';
+            betsTable.style.display = 'table';
+            
+            bets.forEach(bet => {
+                const row = document.createElement('tr');
+                
+                if (bet.result === 'win') {
+                    row.classList.add('win');
+                } else if (bet.result === 'loss') {
+                    row.classList.add('loss');
+                } else if (bet.result === 'return') {
+                    row.classList.add('return');
+                }
+                
+                let profit = 0;
+                let profitClass = '';
+                let resultText = '';
+                
+                if (bet.result === 'win') {
+                    profit = bet.bet_amount * (bet.coefficient - 1);
+                    profitClass = 'positive';
+                    resultText = 'Выигрыш';
+                } else if (bet.result === 'loss') {
+                    profit = -bet.bet_amount;
+                    profitClass = 'negative';
+                    resultText = 'Проигрыш';
+                } else {
+                    profitClass = 'neutral';
+                    resultText = 'Возврат';
+                }
+                
+                row.innerHTML = `
+                    <td>${bet.formatted_date}</td>
+                    <td>${bet.home_team} - ${bet.away_team}</td>
+                    <td>${parseFloat(bet.index_val).toFixed(2)}</td>
+                    <td>${parseFloat(bet.coefficient).toFixed(2)}</td>
+                    <td>${formatNumber(parseFloat(bet.bet_amount))}</td>
+                    <td class="${profitClass}">
+                        ${bet.result === 'win' ? '+' : ''}${bet.result === 'loss' ? '-' : ''}${bet.result !== 'return' ? formatNumber(Math.abs(profit)) : '0'}
+                    </td>
+                    <td>${resultText}</td>
+                    <td class="text-center">
+                        <a href="#" class="action-btn delete-btn" data-id="${bet.id}" title="Удалить">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                    </td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+            
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', async function(e) {
+                    e.preventDefault();
+                    const betId = this.getAttribute('data-id');
+                    
+                    if (confirm('Вы уверены, что хотите удалить эту ставку?')) {
+                        try {
+                            const result = await eel.delete_bet(parseInt(betId))();
+                            if (result.success) {
+                                loadData();
+                            } else {
+                                alert(result.message);
+                            }
+                        } catch (error) {
+                            console.error('Ошибка при удалении ставки:', error);
+                            alert('Произошла ошибка при удалении ставки.');
+                        }
+                    }
+                });
+            });
+        } else {
+            noBetsMessage.textContent = 'Нет данных о ставках';
+            noBetsMessage.style.display = 'block';
+            betsTable.style.display = 'none';
+        }
+    }
+
+    // Функция валидации даты
+    function validateDate(dateStr) {
+        const normalizedDateStr = dateStr.replace(/,/g, '.');
+        const regex = /^\d{2}\.\d{2}\.\d{4}$/;
+        if (!regex.test(normalizedDateStr)) return false;
+        
+        const parts = normalizedDateStr.split('.');
+        const day = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10);
+        const year = parseInt(parts[2], 10);
+        
+        if (month < 1 || month > 12) return false;
+        if (day < 1 || day > 31) return false;
+        
+        return true;
+    }
+
+    // Инициализация приложения
     loadData();
     
     // Элементы формы
@@ -249,7 +228,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Обработчик ввода для автоматической замены запятых на точки
     dateInput.addEventListener('input', function() {
-        // Заменяем запятые на точки
         this.value = this.value.replace(/,/g, '.');
         
         if (validateDate(this.value)) {
@@ -272,7 +250,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Собираем данные формы
         const formData = {
             date: dateValue,
             home_team: document.getElementById('home_team').value,
@@ -283,18 +260,15 @@ document.addEventListener('DOMContentLoaded', function() {
             result: document.getElementById('result').value
         };
         
-        // Проверяем, что выбран результат (не дефолтное значение)
         if (formData.result === 'Результат') {
             alert('Пожалуйста, выберите результат ставки');
             return;
         }
         
         try {
-            // Отправляем данные на сервер
             const result = await eel.add_bet(formData)();
             
             if (result.success) {
-                // Очищаем форму (кроме даты)
                 document.getElementById('home_team').value = '';
                 document.getElementById('away_team').value = '';
                 document.getElementById('index_val').value = '';
@@ -302,7 +276,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('bet_amount').value = '';
                 document.getElementById('result').value = 'Результат';
                 
-                // Перезагружаем данные
                 loadData();
             } else {
                 alert(result.message);
@@ -319,7 +292,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const result = await eel.export_to_excel()();
             
             if (result.success) {
-                // Создаем ссылку для скачивания
                 const link = document.createElement('a');
                 link.href = `data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,${result.data}`;
                 link.download = result.filename;
@@ -350,10 +322,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         const result = await eel.import_from_excel(e.target.result)();
                         
                         if (result.success) {
-                            // Очищаем input
                             document.getElementById('excel-file-input').value = '';
-                            
-                            // Перезагружаем данные
                             loadData();
                             alert(result.message);
                         } else {
@@ -371,4 +340,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+});
+
+// Обработчик закрытия окна
+window.addEventListener('beforeunload', async function() {
+    try {
+        await eel.close_app()();
+    } catch (e) {
+        console.error("Ошибка при закрытии:", e);
+    }
 });

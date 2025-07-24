@@ -14,7 +14,8 @@ a = Analysis(
         'sqlite3',
         'matplotlib.backends.backend_agg',
         'pandas',
-        'eel'
+        'eel',
+        'psutil'
     ],
     hookspath=[],
     hooksconfig={},
@@ -41,7 +42,7 @@ exe = EXE(
     upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=False,  # Измените на True для отладки
+    console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
@@ -49,3 +50,4 @@ exe = EXE(
     entitlements_file=None,
     icon='icon.ico'  # Добавьте если нужен иконка
 )
+    
