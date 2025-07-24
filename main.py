@@ -9,9 +9,6 @@ import base64
 from collections import namedtuple
 import pandas as pd
 import eel
-import webbrowser
-import threading
-import time
 
 # Инициализация Eel
 eel.init('web')
@@ -387,16 +384,10 @@ def import_from_excel(excel_data):
         print(f"Ошибка при импорте из Excel: {e}")
         return {'success': False, 'message': f'Ошибка при импорте: {str(e)}'}
 
-def open_browser():
-    """Автоматическое открытие браузера"""
-    time.sleep(2)  # Даем серверу время запуститься
-    webbrowser.open_new("http://localhost:8000/index.html")
-
 if __name__ == '__main__':
     # Инициализация базы данных
     init_db()
     
-    # Запуск приложения
+    # Запуск приложения с указанием размера окна
     print("Запуск приложения...")
-    threading.Thread(target=open_browser).start()
-    eel.start('index.html', size=(1200, 800), mode='default')
+    eel.start('index.html', size=(1200, 800), mode='default', suppress_error=True)
