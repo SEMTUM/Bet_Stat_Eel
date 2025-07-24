@@ -177,67 +177,94 @@ def calculate_stats():
         'bets': bets_for_table
     }
 
+
+#############################################################################
+
+
+
 def generate_chart(balance_history):
-    """Генерация графика баланса"""
+    """Генерация графика баланса с улучшенной визуализацией"""
     if not balance_history:
         return None
     
+    # Преобразование данных: даты из строк в объекты datetime и получение значений баланса
     dates = [datetime.strptime(item[0], '%Y-%m-%d') for item in balance_history]
     balances = [item[1] for item in balance_history]
     
-    plt.style.use('dark_background')
-    fig, ax = plt.subplots(figsize=(10, 5), facecolor='#1e1e1e')
-    ax.set_facecolor('#1e1e1e')
+    # Настройка стиля и размера графика
+    plt.style.use('dark_background')  # Используем темный фон для графика
+    fig, ax = plt.subplots(figsize=(20, 10), facecolor='#1e1e1e')  # Создаем фигуру размером 20x10 дюймов
+    ax.set_facecolor('#1e1e1e')  # Устанавливаем цвет фона области графика
     
-    segments = []
-    current_segment = [0]
+    # Основная линия графика с плавными переходами
+    line, = ax.plot(dates, balances, 
+                   color="#5B8AE0",  # Цвет линии (голубой)
+                   linewidth=3,  # Толщина линии (в пикселях)
+                   alpha=0.9,  # Прозрачность линии (0-1)
+                   marker='',  # Тип маркера (круги)
+                   markersize=1,  # Размер маркеров (в пунктах)
+                   markerfacecolor="#4169E194",  # Цвет заливки маркеров
+                   markeredgecolor='white',  # Цвет границы маркеров
+                   markeredgewidth=1.5,  # Толщина границы маркеров
+                   linestyle='-',  # Стиль линии (сплошная)
+                   solid_capstyle='round',  # Скругление концов линии
+                   solid_joinstyle='round',  # Скругление соединений сегментов
+                   zorder=3)  # Порядок отрисовки (выше других элементов)
     
-    for i in range(1, len(balances)):
-        if (balances[i] >= balances[i-1] and balances[i-1] >= (segments[-1][-1] if segments else balances[0])) or \
-           (balances[i] < balances[i-1] and balances[i-1] < (segments[-1][-1] if segments else balances[0])):
-            current_segment.append(i)
-        else:
-            segments.append(current_segment)
-            current_segment = [i-1, i]
+    # Плавная заливка под линией с градиентом
+    ax.fill_between(dates, balances, min(balances) if min(balances) < 0 else 0,
+                   color="#4169E19E",  # Цвет заливки
+                   alpha=0.10,  # Прозрачность заливки
+                   interpolate=True)  # Сглаживание границ заливки
     
-    if current_segment:
-        segments.append(current_segment)
+    # Улучшенная сетка
+    ax.grid(True,  # Включение сетки
+           color='#444',  # Цвет линий сетки
+           linestyle=':',  # Стиль линий (точечный)
+           alpha=0.4)  # Прозрачность сетки
     
-    for segment in segments:
-        if len(segment) < 2:
-            continue
-            
-        segment_dates = [dates[i] for i in segment]
-        segment_balances = [balances[i] for i in segment]
-        
-        if segment_balances[-1] >= segment_balances[0]:
-            ax.plot(segment_dates, segment_balances, 
-                   marker='o', 
-                   color='#6495ED', 
-                   markersize=5, 
-                   linewidth=2)
-        else:
-            ax.plot(segment_dates, segment_balances, 
-                   marker='o', 
-                   color='#f44336', 
-                   markersize=5, 
-                   linewidth=2)
+    # Оси и рамка
+    for spine in ['bottom', 'top', 'right', 'left']:
+        ax.spines[spine].set_color('#666')  # Цвет границ графика
+        ax.spines[spine].set_linewidth(1.5)  # Толщина границ
     
-    ax.grid(True, color='#333', linestyle='--', alpha=0.5)
-    ax.spines['bottom'].set_color('#333')
-    ax.spines['top'].set_color('#333') 
-    ax.spines['right'].set_color('#333')
-    ax.spines['left'].set_color('#333')
-    ax.tick_params(axis='y', colors='#e0e0e0')
+    # Подписи осей
+    ax.tick_params(axis='both',  # Настройка для обеих осей
+                  colors="#8D8D8D",  # Цвет подписей
+                  labelsize=22)  # Размер шрифта подписей
+    ax.tick_params(axis='both', which='major', pad=20)  # Основные деления
+    ax.tick_params(axis='both', which='minor', pad=20)   # Второстепенные деления
     
-    plt.tight_layout()
+    # Форматирование дат на оси X
     
-    img = io.BytesIO()
-    plt.savefig(img, format='png', facecolor='#1e1e1e', bbox_inches='tight')
-    img.seek(0)
-    plt.close(fig)
+    ax.xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter('%m.%Y'))  # Формат даты (день.месяц.год)
     
-    return base64.b64encode(img.getvalue()).decode('utf-8')
+    # Нулевая линия (горизонтальная)
+    zero_line = ax.axhline(0,  # Y-координата линии
+                          color='#888',  # Цвет линии
+                          linestyle='--',  # Стиль линии (пунктир)
+                          linewidth=1.2,  # Толщина линии
+                          alpha=0.7,  # Прозрачность
+                          zorder=1)  # Порядок отрисовки
+    
+    
+    # Сохранение с высоким качеством
+    img = io.BytesIO()  # Создаем буфер для сохранения изображения
+    plt.savefig(img, 
+               format='png',  # Формат изображения
+               facecolor='#1e1e1e',  # Цвет фона
+               dpi=120,  # Разрешение (точек на дюйм)
+               bbox_inches='tight',  # Обрезка пустых областей
+               transparent=False)  # Непрозрачный фон
+    img.seek(0)  # Перемещаем указатель в начало буфера
+    plt.close(fig)  # Закрываем фигуру для освобождения памяти
+    
+    return base64.b64encode(img.getvalue()).decode('utf-8')  # Возвращаем изображение в base64
+
+
+############################################################################
+
+
 
 def get_bets_for_table():
     """Получает ставки для отображения в таблице"""
