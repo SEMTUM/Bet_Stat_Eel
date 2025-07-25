@@ -268,8 +268,8 @@ document.addEventListener('DOMContentLoaded', function() {
         pageNumbers.innerHTML = '';
         
         // Определяем диапазон страниц для отображения
-        let startPage = Math.max(1, currentPage - 3);
-        let endPage = Math.min(totalPages, currentPage + 3);
+        let startPage = Math.max(1, currentPage - 2);
+        let endPage = Math.min(totalPages, currentPage + 2);
         
         // Если текущая страница в начале, показываем больше страниц справа
         if (currentPage <= 3) {
