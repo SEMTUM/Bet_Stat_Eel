@@ -4,6 +4,9 @@ document.addEventListener('DOMContentLoaded', function() {
         return num.toFixed(decimals).replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1 ');
     }
 
+    // Текущая редактируемая ставка (null если добавляем новую)
+    let editingBetId = null;
+
     // Функция для загрузки и отображения данных
     async function loadData() {
         try {
@@ -35,7 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 format: (val) => `${val.toFixed(1)}%`
             },
             {
-                title: 'Win / Loss / Return',
+                title: 'В-ш / П-ш / В-т',
                 value: `${stats.won_bets}/${stats.total_bets - stats.won_bets - stats.returned_bets}/${stats.returned_bets}`,
                 className: 'text-center',
                 html: `<span class="positive">${stats.won_bets}</span> / 
@@ -126,7 +129,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     row.classList.add('win');
                 } else if (bet.result === 'loss') {
                     row.classList.add('loss');
-                } else if (bet.result === 'return') {
+                } else if (bet.result === 'return' || bet.result === 'pending') {
                     row.classList.add('return');
                 }
                 
@@ -142,9 +145,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     profit = -bet.bet_amount;
                     profitClass = 'negative';
                     resultText = 'Проигрыш';
-                } else {
+                } else if (bet.result === 'return') {
                     profitClass = 'neutral';
                     resultText = 'Возврат';
+                } else if (bet.result === 'pending') {
+                    profitClass = 'neutral';
+                    resultText = 'В ожидании';
                 }
                 
                 row.innerHTML = `
@@ -154,19 +160,25 @@ document.addEventListener('DOMContentLoaded', function() {
                     <td>${parseFloat(bet.coefficient).toFixed(2)}</td>
                     <td>${formatNumber(parseFloat(bet.bet_amount))}</td>
                     <td class="${profitClass}">
-                        ${bet.result === 'win' ? '+' : ''}${bet.result === 'loss' ? '-' : ''}${bet.result !== 'return' ? formatNumber(Math.abs(profit)) : '0'}
+                        ${bet.result === 'win' ? '+' : ''}${bet.result === 'loss' ? '-' : ''}${bet.result !== 'return' && bet.result !== 'pending' ? formatNumber(Math.abs(profit)) : '0'}
                     </td>
                     <td>${resultText}</td>
                     <td class="text-center">
+                        
                         <a href="#" class="action-btn delete-btn" data-id="${bet.id}" title="Удалить">
                             <i class="fas fa-trash"></i>
                         </a>
+                        
+                        <a href="#" class="action-btn edit-btn" data-id="${bet.id}" title="Изменить">
+                            <i class="fas fa-edit"></i>
+                        </a>  
                     </td>
                 `;
                 
                 tableBody.appendChild(row);
             });
             
+            // Обработчики для кнопок удаления
             document.querySelectorAll('.delete-btn').forEach(btn => {
                 btn.addEventListener('click', async function(e) {
                     e.preventDefault();
@@ -184,6 +196,45 @@ document.addEventListener('DOMContentLoaded', function() {
                             console.error('Ошибка при удалении ставки:', error);
                             alert('Произошла ошибка при удалении ставки.');
                         }
+                    }
+                });
+            });
+            
+            // Обработчики для кнопок редактирования
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', async function(e) {
+                    e.preventDefault();
+                    const betId = this.getAttribute('data-id');
+                    
+                    try {
+                        const result = await eel.get_bet(parseInt(betId))();
+                        if (result.success) {
+                            const bet = result.bet;
+                            editingBetId = bet.id;
+                            
+                            // Заполняем форму данными ставки
+                            document.getElementById('date').value = bet.formatted_date;
+                            document.getElementById('home_team').value = bet.home_team;
+                            document.getElementById('away_team').value = bet.away_team;
+                            document.getElementById('index_val').value = bet.index_val;
+                            document.getElementById('coefficient').value = bet.coefficient;
+                            document.getElementById('bet_amount').value = bet.bet_amount;
+                            
+                            // Сбрасываем результат на значение по умолчанию
+                            document.getElementById('result').value = 'Результат';
+                            
+                            // Меняем текст кнопки
+                            const submitBtn = document.getElementById('submit-btn');
+                            submitBtn.innerHTML = '<i class="fas fa-save"></i> Записать';
+                            
+                            // Прокручиваем к форме
+                            document.getElementById('bet-form').scrollIntoView({ behavior: 'smooth' });
+                        } else {
+                            alert(result.message);
+                        }
+                    } catch (error) {
+                        console.error('Ошибка при получении ставки:', error);
+                        alert('Произошла ошибка при получении данных ставки.');
                     }
                 });
             });
@@ -218,6 +269,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const dateInput = document.getElementById('date');
     const dateError = document.getElementById('date-error');
     const form = document.getElementById('bet-form');
+    const submitBtn = document.getElementById('submit-btn');
     
     // Устанавливаем текущую дату по умолчанию
     const today = new Date();
@@ -265,10 +317,24 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
+        // Преобразуем результат в нужный формат
+        if (formData.result === 'Выигрыш') formData.result = 'win';
+        else if (formData.result === 'Проигрыш') formData.result = 'loss';
+        else if (formData.result === 'Возврат') formData.result = 'return';
+        else if (formData.result === 'Ожидание') formData.result = 'pending';
+        
         try {
-            const result = await eel.add_bet(formData)();
+            let result;
+            if (editingBetId) {
+                // Редактируем существующую ставку
+                result = await eel.update_bet(editingBetId, formData)();
+            } else {
+                // Добавляем новую ставку
+                result = await eel.add_bet(formData)();
+            }
             
             if (result.success) {
+                // Сбрасываем форму
                 document.getElementById('home_team').value = '';
                 document.getElementById('away_team').value = '';
                 document.getElementById('index_val').value = '';
@@ -276,13 +342,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('bet_amount').value = '';
                 document.getElementById('result').value = 'Результат';
                 
+                // Возвращаем кнопку в исходное состояние
+                submitBtn.innerHTML = '<i class="fas fa-plus"></i> Добавить';
+                editingBetId = null;
+                
+                // Обновляем данные
                 loadData();
             } else {
                 alert(result.message);
             }
         } catch (error) {
-            console.error('Ошибка при добавлении ставки:', error);
-            alert('Произошла ошибка при добавлении ставки.');
+            console.error('Ошибка при добавлении/обновлении ставки:', error);
+            alert('Произошла ошибка при добавлении/обновлении ставки.');
         }
     });
     

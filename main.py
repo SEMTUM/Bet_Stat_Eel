@@ -95,27 +95,30 @@ def calculate_stats():
     
     cursor.execute('SELECT * FROM bets ORDER BY date ASC')
     bets = cursor.fetchall()
-    total_bets = len(bets)
-    won_bets = len([b for b in bets if b['result'] == 'win'])
-    returned_bets = len([b for b in bets if b['result'] == 'return'])
+    
+    # Фильтруем ставки, исключая те, что в ожидании
+    active_bets = [b for b in bets if b['result'] != 'pending']
+    total_bets = len(active_bets)
+    won_bets = len([b for b in active_bets if b['result'] == 'win'])
+    returned_bets = len([b for b in active_bets if b['result'] == 'return'])
     
     profit = sum(
         b['bet_amount'] * (b['coefficient'] - 1) if b['result'] == 'win' else
         -b['bet_amount'] if b['result'] == 'loss' else 0
-        for b in bets
+        for b in active_bets
     )
     
     pass_rate = (won_bets / (total_bets - returned_bets)) * 100 if (total_bets - returned_bets) > 0 else 0
     
-    total_invested = sum(b['bet_amount'] for b in bets if b['result'] != 'return')
+    total_invested = sum(b['bet_amount'] for b in active_bets if b['result'] != 'return')
     roi = (profit / total_invested) * 100 if total_invested > 0 else 0
     
-    avg_coefficient = sum(b['coefficient'] for b in bets) / total_bets if total_bets > 0 else 0
+    avg_coefficient = sum(b['coefficient'] for b in active_bets) / total_bets if total_bets > 0 else 0
     
     balance = 0
     max_balance = 0
     max_drawdown = 0
-    for b in bets:
+    for b in active_bets:
         if b['result'] == 'win':
             balance += b['bet_amount'] * (b['coefficient'] - 1)
         elif b['result'] == 'loss':
@@ -133,7 +136,7 @@ def calculate_stats():
     loss_streak = 0
     last_result = None
     
-    for b in bets:
+    for b in active_bets:
         if b['result'] == 'win':
             current_streak = current_streak + 1 if last_result == 'win' else 1
             win_streak = max(win_streak, current_streak)
@@ -145,7 +148,7 @@ def calculate_stats():
     
     balance_history = []
     current_balance = 0
-    for b in bets:
+    for b in active_bets:
         if b['result'] == 'win':
             current_balance += b['bet_amount'] * (b['coefficient'] - 1)
         elif b['result'] == 'loss':
@@ -177,94 +180,72 @@ def calculate_stats():
         'bets': bets_for_table
     }
 
-
-#############################################################################
-
-
-
 def generate_chart(balance_history):
     """Генерация графика баланса с улучшенной визуализацией"""
     if not balance_history:
         return None
     
-    # Преобразование данных: даты из строк в объекты datetime и получение значений баланса
     dates = [datetime.strptime(item[0], '%Y-%m-%d') for item in balance_history]
     balances = [item[1] for item in balance_history]
     
-    # Настройка стиля и размера графика
-    plt.style.use('dark_background')  # Используем темный фон для графика
-    fig, ax = plt.subplots(figsize=(20, 10), facecolor='#1e1e1e')  # Создаем фигуру размером 20x10 дюймов
-    ax.set_facecolor('#1e1e1e')  # Устанавливаем цвет фона области графика
+    plt.style.use('dark_background')
+    fig, ax = plt.subplots(figsize=(20, 10), facecolor='#1e1e1e')
+    ax.set_facecolor('#1e1e1e')
     
-    # Основная линия графика с плавными переходами
     line, = ax.plot(dates, balances, 
-                   color="#5B8AE0",  # Цвет линии (голубой)
-                   linewidth=3,  # Толщина линии (в пикселях)
-                   alpha=0.9,  # Прозрачность линии (0-1)
-                   marker='',  # Тип маркера (круги)
-                   markersize=1,  # Размер маркеров (в пунктах)
-                   markerfacecolor="#4169E194",  # Цвет заливки маркеров
-                   markeredgecolor='white',  # Цвет границы маркеров
-                   markeredgewidth=1.5,  # Толщина границы маркеров
-                   linestyle='-',  # Стиль линии (сплошная)
-                   solid_capstyle='round',  # Скругление концов линии
-                   solid_joinstyle='round',  # Скругление соединений сегментов
-                   zorder=3)  # Порядок отрисовки (выше других элементов)
+                   color="#5B8AE0",
+                   linewidth=3,
+                   alpha=0.9,
+                   marker='',
+                   markersize=1,
+                   markerfacecolor="#4169E194",
+                   markeredgecolor='white',
+                   markeredgewidth=1.5,
+                   linestyle='-',
+                   solid_capstyle='round',
+                   solid_joinstyle='round',
+                   zorder=3)
     
-    # Плавная заливка под линией с градиентом
     ax.fill_between(dates, balances, min(balances) if min(balances) < 0 else 0,
-                   color="#4169E19E",  # Цвет заливки
-                   alpha=0.10,  # Прозрачность заливки
-                   interpolate=True)  # Сглаживание границ заливки
+                   color="#4169E19E",
+                   alpha=0.10,
+                   interpolate=True)
     
-    # Улучшенная сетка
-    ax.grid(True,  # Включение сетки
-           color='#444',  # Цвет линий сетки
-           linestyle=':',  # Стиль линий (точечный)
-           alpha=0.4)  # Прозрачность сетки
+    ax.grid(True,
+           color='#444',
+           linestyle=':',
+           alpha=0.4)
     
-    # Оси и рамка
     for spine in ['bottom', 'top', 'right', 'left']:
-        ax.spines[spine].set_color('#666')  # Цвет границ графика
-        ax.spines[spine].set_linewidth(1.5)  # Толщина границ
+        ax.spines[spine].set_color('#666')
+        ax.spines[spine].set_linewidth(1.5)
     
-    # Подписи осей
-    ax.tick_params(axis='both',  # Настройка для обеих осей
-                  colors="#8D8D8D",  # Цвет подписей
-                  labelsize=22)  # Размер шрифта подписей
-    ax.tick_params(axis='both', which='major', pad=20)  # Основные деления
-    ax.tick_params(axis='both', which='minor', pad=20)   # Второстепенные деления
+    ax.tick_params(axis='both',
+                  colors="#8D8D8D",
+                  labelsize=22)
+    ax.tick_params(axis='both', which='major', pad=20)
+    ax.tick_params(axis='both', which='minor', pad=20)
     
-    # Форматирование дат на оси X
+    ax.xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter('%m.%Y'))
     
-    ax.xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter('%m.%Y'))  # Формат даты (день.месяц.год)
+    zero_line = ax.axhline(0,
+                          color='#888',
+                          linestyle='--',
+                          linewidth=1.2,
+                          alpha=0.7,
+                          zorder=1)
     
-    # Нулевая линия (горизонтальная)
-    zero_line = ax.axhline(0,  # Y-координата линии
-                          color='#888',  # Цвет линии
-                          linestyle='--',  # Стиль линии (пунктир)
-                          linewidth=1.2,  # Толщина линии
-                          alpha=0.7,  # Прозрачность
-                          zorder=1)  # Порядок отрисовки
-    
-    
-    # Сохранение с высоким качеством
-    img = io.BytesIO()  # Создаем буфер для сохранения изображения
+    img = io.BytesIO()
     plt.savefig(img, 
-               format='png',  # Формат изображения
-               facecolor='#1e1e1e',  # Цвет фона
-               dpi=120,  # Разрешение (точек на дюйм)
-               bbox_inches='tight',  # Обрезка пустых областей
-               transparent=False)  # Непрозрачный фон
-    img.seek(0)  # Перемещаем указатель в начало буфера
-    plt.close(fig)  # Закрываем фигуру для освобождения памяти
+               format='png',
+               facecolor='#1e1e1e',
+               dpi=120,
+               bbox_inches='tight',
+               transparent=False)
+    img.seek(0)
+    plt.close(fig)
     
-    return base64.b64encode(img.getvalue()).decode('utf-8')  # Возвращаем изображение в base64
-
-
-############################################################################
-
-
+    return base64.b64encode(img.getvalue()).decode('utf-8')
 
 def get_bets_for_table():
     """Получает ставки для отображения в таблице"""
@@ -278,7 +259,7 @@ def get_bets_for_table():
     for bet in bets:
         bet_dict = dict(bet)
         bet_date = datetime.strptime(bet_dict['date'], '%Y-%m-%d')
-        bet_dict['formatted_date'] = bet_date.strftime('%d.%m.%y')
+        bet_dict['formatted_date'] = bet_date.strftime('%d.%m.%Y')
         bets_list.append(bet_dict)
     
     conn.close()
@@ -316,6 +297,68 @@ def add_bet(bet_data):
         return {'success': False, 'message': f'Ошибка при добавлении ставки: {str(e)}'}
 
 @eel.expose
+def update_bet(bet_id, bet_data):
+    """Обновление существующей ставки"""
+    try:
+        date_str = bet_data['date'].replace(',', '.')
+        day, month, year = map(int, date_str.split('.'))
+        date = f"{year}-{month:02d}-{day:02d}"
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            UPDATE bets SET 
+                home_team = ?,
+                away_team = ?,
+                index_val = ?,
+                coefficient = ?,
+                bet_amount = ?,
+                date = ?,
+                result = ?
+            WHERE id = ?
+        ''', (
+            bet_data['home_team'],
+            bet_data['away_team'],
+            float(bet_data['index_val']),
+            float(bet_data['coefficient']),
+            float(bet_data['bet_amount']),
+            date,
+            bet_data['result'],
+            bet_id
+        ))
+        
+        conn.commit()
+        conn.close()
+        return {'success': True, 'message': 'Ставка успешно обновлена'}
+    except Exception as e:
+        print(f"Ошибка при обновлении ставки: {e}")
+        return {'success': False, 'message': f'Ошибка при обновлении ставки: {str(e)}'}
+
+@eel.expose
+def get_bet(bet_id):
+    """Получение данных ставки по ID"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT * FROM bets WHERE id = ?', (bet_id,))
+        bet = cursor.fetchone()
+        
+        if bet:
+            bet_dict = dict(bet)
+            bet_date = datetime.strptime(bet_dict['date'], '%Y-%m-%d')
+            bet_dict['formatted_date'] = bet_date.strftime('%d.%m.%Y')
+            conn.close()
+            return {'success': True, 'bet': bet_dict}
+        else:
+            conn.close()
+            return {'success': False, 'message': 'Ставка не найдена'}
+    except Exception as e:
+        print(f"Ошибка при получении ставки: {e}")
+        return {'success': False, 'message': f'Ошибка при получении ставки: {str(e)}'}
+
+@eel.expose
 def delete_bet(bet_id):
     """Удаление ставки"""
     try:
@@ -348,6 +391,13 @@ def export_to_excel():
             elif bet['result'] == 'loss':
                 profit = -bet['bet_amount']
             
+            result_text = {
+                'win': 'Выигрыш',
+                'loss': 'Проигрыш',
+                'return': 'Возврат',
+                'pending': 'В ожидании'
+            }.get(bet['result'], bet['result'])
+            
             data.append({
                 'Дата': bet['date'],
                 'Хозяева': bet['home_team'],
@@ -355,7 +405,7 @@ def export_to_excel():
                 'Индекс': bet['index_val'],
                 'Коэффициент': bet['coefficient'],
                 'Сумма': bet['bet_amount'],
-                'Результат': bet['result'],
+                'Результат': result_text,
                 'Прибыль': profit
             })
         
@@ -398,6 +448,16 @@ def import_from_excel(excel_data):
                     day, month, year = map(int, date_str.split('.'))
                     date = f"{year}-{month:02d}-{day:02d}"
                 
+                result_text = str(row['Результат']).lower()
+                if result_text == 'выигрыш':
+                    result_text = 'win'
+                elif result_text == 'проигрыш':
+                    result_text = 'loss'
+                elif result_text == 'возврат':
+                    result_text = 'return'
+                elif result_text == 'в ожидании':
+                    result_text = 'pending'
+                
                 cursor.execute('''
                     INSERT INTO bets (home_team, away_team, index_val, coefficient, bet_amount, date, result)
                     VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -408,7 +468,7 @@ def import_from_excel(excel_data):
                     float(row['Коэффициент']),
                     float(row['Сумма']),
                     date,
-                    str(row['Результат']).lower()
+                    result_text
                 ))
             except Exception as e:
                 print(f"Ошибка обработки строки: {e}")

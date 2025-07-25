@@ -8,7 +8,8 @@ a = Analysis(
     binaries=[],
     datas=[
         ('web/*', 'web'),
-        ('bets.db', '.')
+        ('bets.db', '.'),
+        
     ],
     hiddenimports=[
         'sqlite3',
@@ -35,7 +36,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='BetTracker',
+    name='Bet Tracker',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

@@ -272,10 +272,16 @@ tr:hover {
 .action-btn {
     color: #888;             /* Цвет иконки */
     transition: color 0.2s;  /* Плавное изменение цвета */
+    margin: 0 3px;          /* Отступы между кнопками */
+    text-decoration: none;  /* Убираем подчеркивание */
 }
 
 /* Кнопка при наведении */
 .action-btn:hover {
+    color: var(--accent-hover);  /* Акцентный цвет */
+}
+
+.delete-btn:hover {
     color: var(--negative);  /* Красный цвет */
 }
 
