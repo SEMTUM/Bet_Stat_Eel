@@ -69,9 +69,7 @@ def init_db():
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS bets (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            home_team TEXT NOT NULL,
-            away_team TEXT NOT NULL,
-            index_val REAL NOT NULL,
+            event TEXT NOT NULL,
             coefficient REAL NOT NULL,
             bet_amount REAL NOT NULL,
             date DATE NOT NULL,
@@ -277,12 +275,10 @@ def add_bet(bet_data):
         cursor = conn.cursor()
         
         cursor.execute('''
-            INSERT INTO bets (home_team, away_team, index_val, coefficient, bet_amount, date, result)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO bets (event, coefficient, bet_amount, date, result)
+            VALUES (?, ?, ?, ?, ?)
         ''', (
-            bet_data['home_team'],
-            bet_data['away_team'],
-            float(bet_data['index_val']),
+            bet_data['event'],
             float(bet_data['coefficient']),
             float(bet_data['bet_amount']),
             date,
@@ -309,18 +305,14 @@ def update_bet(bet_id, bet_data):
         
         cursor.execute('''
             UPDATE bets SET 
-                home_team = ?,
-                away_team = ?,
-                index_val = ?,
+                event = ?,
                 coefficient = ?,
                 bet_amount = ?,
                 date = ?,
                 result = ?
             WHERE id = ?
         ''', (
-            bet_data['home_team'],
-            bet_data['away_team'],
-            float(bet_data['index_val']),
+            bet_data['event'],
             float(bet_data['coefficient']),
             float(bet_data['bet_amount']),
             date,
@@ -392,21 +384,19 @@ def export_to_excel():
                 profit = -bet['bet_amount']
             
             result_text = {
-                'win': 'Выигрыш',
-                'loss': 'Проигрыш',
+                'win': 'WIN',
+                'loss': 'LOSS',
                 'return': 'Возврат',
                 'pending': 'В ожидании'
             }.get(bet['result'], bet['result'])
             
             data.append({
                 'Дата': bet['date'],
-                'Хозяева': bet['home_team'],
-                'Гости': bet['away_team'],
-                'Индекс': bet['index_val'],
-                'Коэффициент': bet['coefficient'],
+                'Спортивное Событие': bet['event'],
+                'КЭФ': bet['coefficient'],
                 'Сумма': bet['bet_amount'],
                 'Результат': result_text,
-                'Прибыль': profit
+                'Доход': profit
             })
         
         df = pd.DataFrame(data)
@@ -449,9 +439,9 @@ def import_from_excel(excel_data):
                     date = f"{year}-{month:02d}-{day:02d}"
                 
                 result_text = str(row['Результат']).lower()
-                if result_text == 'выигрыш':
+                if result_text == 'win':
                     result_text = 'win'
-                elif result_text == 'проигрыш':
+                elif result_text == 'loss':
                     result_text = 'loss'
                 elif result_text == 'возврат':
                     result_text = 'return'
@@ -459,13 +449,11 @@ def import_from_excel(excel_data):
                     result_text = 'pending'
                 
                 cursor.execute('''
-                    INSERT INTO bets (home_team, away_team, index_val, coefficient, bet_amount, date, result)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO bets (event, coefficient, bet_amount, date, result)
+                    VALUES (?, ?, ?, ?, ?)
                 ''', (
-                    str(row['Хозяева']),
-                    str(row['Гости']),
-                    float(row['Индекс']),
-                    float(row['Коэффициент']),
+                    str(row['Спортивное Событие']),
+                    float(row['КЭФ']),
                     float(row['Сумма']),
                     date,
                     result_text

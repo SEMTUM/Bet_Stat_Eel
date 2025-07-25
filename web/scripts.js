@@ -152,11 +152,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (bet.result === 'win') {
                     profit = bet.bet_amount * (bet.coefficient - 1);
                     profitClass = 'positive';
-                    resultText = 'Выигрыш';
+                    resultText = 'WIN';
                 } else if (bet.result === 'loss') {
                     profit = -bet.bet_amount;
                     profitClass = 'negative';
-                    resultText = 'Проигрыш';
+                    resultText = 'LOSS';
                 } else if (bet.result === 'return') {
                     profitClass = 'neutral';
                     resultText = 'Возврат';
@@ -167,8 +167,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 row.innerHTML = `
                     <td>${bet.formatted_date}</td>
-                    <td>${bet.home_team} - ${bet.away_team}</td>
-                    <td>${parseFloat(bet.index_val).toFixed(2)}</td>
+                    <td>${bet.event}</td>
                     <td>${parseFloat(bet.coefficient).toFixed(2)}</td>
                     <td>${formatNumber(parseFloat(bet.bet_amount))}</td>
                     <td class="${profitClass}">
@@ -176,11 +175,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     </td>
                     <td>${resultText}</td>
                     <td class="text-center">
-                        
                         <a href="#" class="action-btn delete-btn" data-id="${bet.id}" title="Удалить">
                             <i class="fas fa-trash"></i>
                         </a>
-                        
                         <a href="#" class="action-btn edit-btn" data-id="${bet.id}" title="Изменить">
                             <i class="fas fa-edit"></i>
                         </a>  
@@ -229,9 +226,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             
                             // Заполняем форму данными ставки
                             document.getElementById('date').value = bet.formatted_date;
-                            document.getElementById('home_team').value = bet.home_team;
-                            document.getElementById('away_team').value = bet.away_team;
-                            document.getElementById('index_val').value = bet.index_val;
+                            document.getElementById('event').value = bet.event;
                             document.getElementById('coefficient').value = bet.coefficient;
                             document.getElementById('bet_amount').value = bet.bet_amount;
                             
@@ -381,9 +376,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const formData = {
             date: dateValue,
-            home_team: document.getElementById('home_team').value,
-            away_team: document.getElementById('away_team').value,
-            index_val: document.getElementById('index_val').value,
+            event: document.getElementById('event').value,
             coefficient: document.getElementById('coefficient').value,
             bet_amount: document.getElementById('bet_amount').value,
             result: document.getElementById('result').value
@@ -395,8 +388,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Преобразуем результат в нужный формат
-        if (formData.result === 'Выигрыш') formData.result = 'win';
-        else if (formData.result === 'Проигрыш') formData.result = 'loss';
+        if (formData.result === 'WIN') formData.result = 'win';
+        else if (formData.result === 'LOSS') formData.result = 'loss';
         else if (formData.result === 'Возврат') formData.result = 'return';
         else if (formData.result === 'Ожидание') formData.result = 'pending';
         
@@ -412,9 +405,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (result.success) {
                 // Сбрасываем форму
-                document.getElementById('home_team').value = '';
-                document.getElementById('away_team').value = '';
-                document.getElementById('index_val').value = '';
+                document.getElementById('event').value = '';
                 document.getElementById('coefficient').value = '';
                 document.getElementById('bet_amount').value = '';
                 document.getElementById('result').value = 'Результат';

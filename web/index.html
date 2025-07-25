@@ -39,28 +39,16 @@
                     <div class="error-tooltip" id="date-error">Введите в формате 17.07.2025</div>
                 </div>
                 
-                <!-- Поле хозяев -->
+                <!-- Поле спортивного события -->
                 <div class="form-field">
-                    <i class="fas fa-home field-icon"></i>
-                    <input type="text" id="home_team" name="home_team" class="compact-input" placeholder="Хозяева" required>
-                </div>
-                
-                <!-- Поле гостей -->
-                <div class="form-field">
-                    <i class="fas fa-plane-departure field-icon"></i>
-                    <input type="text" id="away_team" name="away_team" class="compact-input" placeholder="Гости" required>
-                </div>
-                
-                <!-- Поле индекса -->
-                <div class="form-field">
-                    <i class="fas fa-chart-line field-icon"></i>
-                    <input type="number" step="0.1" id="index_val" name="index_val" class="compact-input" placeholder="Индекс" required>
+                    <i class="fas fa-trophy field-icon"></i>
+                    <input type="text" id="event" name="event" class="compact-input" placeholder="Спортивное Событие" required>
                 </div>
                 
                 <!-- Поле коэффициента -->
                 <div class="form-field">
                     <i class="fas fa-percentage field-icon"></i>
-                    <input type="number" step="0.01" id="coefficient" name="coefficient" class="compact-input" placeholder="Кэф" required>
+                    <input type="number" step="0.01" id="coefficient" name="coefficient" class="compact-input" placeholder="КЭФ" required>
                 </div>
                 
                 <!-- Поле суммы ставки -->
@@ -74,8 +62,8 @@
                     <i class="fas fa-trophy field-icon"></i>
                     <select id="result" name="result" class="compact-select" required>
                         <option value="Результат">Результат</option>
-                        <option value="win">Выигрыш</option>
-                        <option value="loss">Проигрыш</option>
+                        <option value="win">WIN</option>
+                        <option value="loss">LOSS</option>
                         <option value="return">Возврат</option>
                         <option value="pending">Ожидание</option>
                     </select>
@@ -98,13 +86,12 @@
                     <thead>
                         <tr>
                             <th>Дата</th>
-                            <th>Матч</th>
-                            <th>Индекс</th>
-                            <th>Кэф</th>
+                            <th>Спортивное Событие</th>
+                            <th>КЭФ</th>
                             <th>Ставка</th>
-                            <th>Прибыль</th>
+                            <th>Доход</th>
                             <th>Результат</th>
-                            <th class="text-center">Действия</th>
+                            <th class="text-center">Правка</th>
                         </tr>
                     </thead>
                     <tbody id="bets-table-body">

@@ -105,7 +105,22 @@ h2 {
 /* Специальный класс для поля ввода даты */
 .date-input {
     text-align: center;  /* Выравнивание по центру */
+
 }
+
+
+/* Стиль только для поля события */
+#event {
+    padding-left: 30px; /* Отступ для иконки */
+    text-indent: 1px;  /* Отступ текста от иконки */
+}
+
+/* Настройка иконки только для этого поля */
+#event + .field-icon {
+    left: 12px;
+}
+
+
 
 /* Выпадающий список */
 .compact-select {
@@ -355,19 +370,22 @@ tr:hover {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 5px;
-    margin-top: 15px;
-    padding: 10px 0;
+    gap: 10px;
+    margin-top: 20px;
+    padding: 15px 0;
 }
 
 .pagination-btn {
+    /* Уменьшаем padding */
+    padding: 4px 8px; /* Было 6px 12px */
+    /* Уменьшаем размер шрифта */
+    font-size: 0.8rem; /* Было 0.9rem */
+    /* Остальные свойства остаются без изменений */
     background-color: var(--surface-light);
     color: var(--text-primary);
     border: 1px solid var(--border);
-    padding: 6px 12px;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 0.9rem;
     transition: all 0.1s ease;
     text-decoration: none;
 }
@@ -381,9 +399,19 @@ tr:hover {
     cursor: not-allowed;
 }
 
-.page-numbers {
-    display: flex;
-    gap: 5px;
+.page-number {
+    /* Уменьшаем padding */
+    padding: 4px 8px; /* Было 6px 12px */
+    /* Уменьшаем размер шрифта */
+    font-size: 0.8rem; /* Было 0.9rem */
+    /* Остальные свойства остаются без изменений */
+    background-color: var(--surface-light);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.1s ease;
+    text-decoration: none;
 }
 
 .page-number {
