@@ -6,6 +6,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Текущая редактируемая ставка (null если добавляем новую)
     let editingBetId = null;
+    // Пагинация
+    let currentPage = 1;
+    const betsPerPage = 50;
+    let allBets = [];
 
     // Функция для загрузки и отображения данных
     async function loadData() {
@@ -13,7 +17,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await eel.calculate_stats()();
             updateStats(data.stats);
             updateChart(data.chart_url);
-            updateBetsTable(data.bets);
+            allBets = data.bets;
+            updateBetsTable();
         } catch (error) {
             console.error('Ошибка при загрузке данных:', error);
             alert('Произошла ошибка при загрузке данных. Пожалуйста, попробуйте снова.');
@@ -110,19 +115,26 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Обновление таблицы ставок
-    function updateBetsTable(bets) {
+    // Обновление таблицы ставок с пагинацией
+    function updateBetsTable() {
         const tableBody = document.getElementById('bets-table-body');
         const noBetsMessage = document.getElementById('no-bets-message');
         const betsTable = document.getElementById('bets-table');
+        const paginationControls = document.getElementById('pagination-controls');
         
         tableBody.innerHTML = '';
         
-        if (bets && bets.length > 0) {
+        if (allBets && allBets.length > 0) {
             noBetsMessage.style.display = 'none';
             betsTable.style.display = 'table';
+            paginationControls.style.display = 'block';
             
-            bets.forEach(bet => {
+            // Вычисляем индексы для текущей страницы
+            const startIndex = (currentPage - 1) * betsPerPage;
+            const endIndex = Math.min(startIndex + betsPerPage, allBets.length);
+            const currentBets = allBets.slice(startIndex, endIndex);
+            
+            currentBets.forEach(bet => {
                 const row = document.createElement('tr');
                 
                 if (bet.result === 'win') {
@@ -177,6 +189,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 tableBody.appendChild(row);
             });
+            
+            // Обновляем пагинацию
+            updatePaginationControls();
             
             // Обработчики для кнопок удаления
             document.querySelectorAll('.delete-btn').forEach(btn => {
@@ -242,8 +257,70 @@ document.addEventListener('DOMContentLoaded', function() {
             noBetsMessage.textContent = 'Нет данных о ставках';
             noBetsMessage.style.display = 'block';
             betsTable.style.display = 'none';
+            paginationControls.style.display = 'none';
         }
     }
+
+    // Обновление элементов пагинации
+    function updatePaginationControls() {
+        const totalPages = Math.ceil(allBets.length / betsPerPage);
+        const pageNumbers = document.getElementById('page-numbers');
+        pageNumbers.innerHTML = '';
+        
+        // Определяем диапазон страниц для отображения
+        let startPage = Math.max(1, currentPage - 3);
+        let endPage = Math.min(totalPages, currentPage + 3);
+        
+        // Если текущая страница в начале, показываем больше страниц справа
+        if (currentPage <= 3) {
+            endPage = Math.min(5, totalPages);
+        }
+        // Если текущая страница в конце, показываем больше страниц слева
+        else if (currentPage >= totalPages - 2) {
+            startPage = Math.max(1, totalPages - 4);
+        }
+        
+        // Кнопка "Предыдущая"
+        document.getElementById('prev-page').classList.toggle('disabled', currentPage === 1);
+        
+        // Номера страниц
+        for (let i = startPage; i <= endPage; i++) {
+            const pageLink = document.createElement('a');
+            pageLink.href = '#';
+            pageLink.textContent = i;
+            pageLink.className = 'page-number';
+            if (i === currentPage) {
+                pageLink.classList.add('active');
+            }
+            pageLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                currentPage = i;
+                updateBetsTable();
+            });
+            pageNumbers.appendChild(pageLink);
+        }
+        
+        // Кнопка "Следующая"
+        document.getElementById('next-page').classList.toggle('disabled', currentPage === totalPages);
+    }
+
+    // Обработчики для кнопок пагинации
+    document.getElementById('prev-page').addEventListener('click', function(e) {
+        e.preventDefault();
+        if (currentPage > 1) {
+            currentPage--;
+            updateBetsTable();
+        }
+    });
+
+    document.getElementById('next-page').addEventListener('click', function(e) {
+        e.preventDefault();
+        const totalPages = Math.ceil(allBets.length / betsPerPage);
+        if (currentPage < totalPages) {
+            currentPage++;
+            updateBetsTable();
+        }
+    });
 
     // Функция валидации даты
     function validateDate(dateStr) {

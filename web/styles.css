@@ -350,6 +350,63 @@ tr:hover {
     font-size: 0.9rem;
 }
 
+/* Пагинация */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    margin-top: 15px;
+    padding: 10px 0;
+}
+
+.pagination-btn {
+    background-color: var(--surface-light);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.1s ease;
+    text-decoration: none;
+}
+
+.pagination-btn:hover:not(.disabled) {
+    background-color: var(--accent-hover);
+}
+
+.pagination-btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.page-numbers {
+    display: flex;
+    gap: 5px;
+}
+
+.page-number {
+    background-color: var(--surface-light);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.1s ease;
+    text-decoration: none;
+}
+
+.page-number:hover {
+    background-color: var(--surface);
+}
+
+.page-number.active {
+    background-color: var(--accent-hover);
+    color: white;
+}
+
 /* Адаптивность для средних экранов */
 @media (max-width: 900px) {
     .stats-grid {
@@ -373,5 +430,9 @@ tr:hover {
     
     .excel-buttons {
         justify-content: center;
+    }
+    
+    .pagination {
+        flex-wrap: wrap;
     }
 }
