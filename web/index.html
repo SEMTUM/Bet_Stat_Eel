@@ -5,59 +5,54 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <title>Bet Bot Lab</title>
-    <!-- Подключаем иконки Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <!-- Подключаем CSS стили -->
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
-        
         <h1> &nbsp; СТАТИСТИКА СТАВОК НА СПОРТИВНЫЕ СОБЫТИЯ &nbsp; BBL ®</h1>
         
-        <!-- Блок статистики -->
         <div class="card">
-            <div class="stats-grid" id="stats-grid">
-                <!-- Карточки статистики будут заполнены JavaScript -->
-            </div>
+            <div class="stats-grid" id="stats-grid"></div>
         </div>
         
-        <!-- Блок с графиком -->
-         
         <div class="card" id="chart-container" style="display: none;">
-            
             <img id="chart-img" alt="График изменения банка" class="chart-img">
         </div>
         
-        <!-- Форма добавления ставки -->
         <div class="card">
             <h2>Добавить ставку</h2>
             <form class="compact-form" id="bet-form">
-                <!-- Поле даты -->
                 <div class="form-field">
                     <input type="text" id="date" name="date" class="compact-input date-input" placeholder="дд.мм.гг" required>
                     <div class="error-tooltip" id="date-error">Введите в формате 17.07.2025</div>
                 </div>
                 
-                <!-- Поле спортивного события -->
                 <div class="form-field">
                     <i class="fas fa-trophy field-icon"></i>
-                    <input type="text" id="event" name="event" class="compact-input" placeholder="Спортивное Событие" required>
+                    <input type="text" id="event" name="event" class="compact-input" placeholder="Матч" required>
                 </div>
                 
-                <!-- Поле коэффициента -->
+                <div class="form-field">
+                    <i class="fas fa-user-tie field-icon"></i>
+                    <select id="source" name="source" class="compact-select">
+                        <option value="Не указан">Источник</option>
+                    </select>
+                    <button type="button" id="add-source-form-btn" class="add-source-form-btn" title="Добавить новый источник">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+                
                 <div class="form-field">
                     <i class="fas fa-percentage field-icon"></i>
                     <input type="number" step="0.01" id="coefficient" name="coefficient" class="compact-input" placeholder="КЭФ" required>
                 </div>
                 
-                <!-- Поле суммы ставки -->
                 <div class="form-field">
                     <i class="fas fa-ruble-sign field-icon"></i>
                     <input type="number" id="bet_amount" name="bet_amount" class="compact-input" placeholder="Сумма" required>
                 </div>
                 
-                <!-- Выпадающий список результата -->
                 <div class="form-field">
                     <i class="fas fa-trophy field-icon"></i>
                     <select id="result" name="result" class="compact-select" required>
@@ -69,24 +64,70 @@
                     </select>
                 </div>
                 
-                <!-- Кнопка добавления -->
                 <button type="submit" class="add-btn" id="submit-btn">
                     <i class="fas fa-plus"></i> Добавить
                 </button>
             </form>
         </div>
         
-        <!-- История ставок -->
+        <div id="source-modal" class="modal">
+            <div class="modal-content">
+                <span class="close-modal">&times;</span>
+                <h3>Добавить новый источник</h3>
+                <input type="text" id="new-source-input" placeholder="Введите название источника">
+                <button id="confirm-add-source" class="modal-btn">Добавить</button>
+            </div>
+        </div>
+        
         <div class="card">
-            <h2>История ставок</h2>
+            <h2>Архив ставок</h2>
+            
+            <!-- Основное изменение: переработана структура фильтров -->
+            <div class="filters-container">
+                <div class="filters-row"> <!-- Изменено с filters-grid на filters-row -->
+                    <div class="filter-item">
+                        <span class="filter-label">Период:</span>
+                        <select id="date-filter" class="filter-select">
+                            <option value="all">Все время</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-item">
+                        <span class="filter-label">КЭФ:</span>
+                        <div class="coeff-range">
+                            <input type="number" step="0.01" id="min-coeff" class="coeff-input" placeholder="От">
+                            <span class="coeff-separator">-</span>
+                            <input type="number" step="0.01" id="max-coeff" class="coeff-input" placeholder="До">
+                        </div>
+                    </div>
+                    
+                    <div class="filter-item">
+                        <span class="filter-label">Источник:</span>
+                        <select id="source-filter" class="filter-select">
+                            <option value="all">Все источники</option>
+                            <option value="Не указан">Не указан</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-buttons">
+                        <button id="apply-filters" class="filter-apply-btn">
+                            <i class="fas fa-check"></i> Применить
+                        </button>
+                        <button id="reset-filters" class="filter-reset-btn">
+                            <i class="fas fa-redo"></i> Сбросить
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
             <div id="bets-table-container">
-                <!-- Таблица будет заполнена JavaScript -->
                 <p id="no-bets-message">Загрузка данных...</p>
                 <table id="bets-table" style="display: none;">
                     <thead>
                         <tr>
                             <th>Дата</th>
-                            <th>Спортивное Событие</th>
+                            <th>Матч</th>
+                            <th>Источник</th>
                             <th>КЭФ</th>
                             <th>Ставка</th>
                             <th>Доход</th>
@@ -94,9 +135,7 @@
                             <th class="text-center">Правка</th>
                         </tr>
                     </thead>
-                    <tbody id="bets-table-body">
-                        <!-- Строки будут добавлены через JavaScript -->
-                    </tbody>
+                    <tbody id="bets-table-body"></tbody>
                 </table>
                 <div id="pagination-controls" style="display: none;">
                     <div class="pagination">
@@ -107,32 +146,23 @@
                 </div>
             </div>
             
-            <!-- Кнопки для работы с Excel -->
             <div class="excel-buttons">
-                <!-- Кнопка импорта из Excel -->
                 <button class="excel-btn" id="import-excel-btn" title="Загрузить данные из Excel (старые данные будут удалены)">
-                    <i class="fa fa-download"></i> Загрузить Excel
+                    <i class="fa fa-download"></i> Загрузить
                 </button>
-
-                <!-- Кнопка экспорта в Excel -->
                 <button class="excel-btn" id="export-excel-btn" title="Скачать историю в Excel">
-                    <i class="fas fa-save"></i> Сохранить в Excel
+                    <i class="fas fa-save"></i> Сохранить
                 </button>
-                
-                <!-- Скрытый input для загрузки файла -->
                 <input type="file" id="excel-file-input" accept=".xlsx" style="display: none;">
             </div>
         </div>
 
-        <!-- Подвал -->
         <div class="footer">
-            <a href="https://t.me/betbotlab" target="_blank">BBL ®</a> – Напишем Любые Программы и Telegram Боты по Вашим Стратегиям и ТЗ!
+            <a href="https://t.me/betbotlab" target="_blank">BBL ®</a> – Напишем Любые Программы и Telegram Боты по Вашим Стратегиям и ТЗ
         </div>
     </div>
 
-    <!-- Подключаем JavaScript -->
     <script src="scripts.js"></script>
-    <!-- Подключаем Eel -->
     <script type="text/javascript" src="/eel.js"></script>
 </body>
 </html>

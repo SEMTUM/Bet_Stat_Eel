@@ -1,320 +1,277 @@
-/* 
-* CSS Переменные для цветовой схемы 
-* Позволяют легко изменять цвета во всем приложении
-*/
 :root {
-    --bg-dark: #121212;             /* Основной фон страницы */
-    --surface: #1e1e1e;            /* Фон карточек */
-    --surface-light: #2d2d2d;      /* Фон элементов внутри карточек */
-    --border: #333;                /* Цвет границ */
-    --text-primary: #d4d4d4;       /* Основной цвет текста */
-    --text-secondary: #999999;     /* Вторичный цвет текста (подписи, иконки) */
-    --accent: #6e6e6e;            /* Акцентный цвет кнопок */
-    --accent-hover:#4169E1;      /* Цвет кнопок при наведении */
-    --positive: #4CAF50;         /* Цвет для положительных значений */
-    --negative: #f44336;        /* Цвет для отрицательных значений */
-    --neutral: #FFC107;        /* Нейтральный цвет (возвраты) */
-    --win-bg: rgba(76, 175, 80, 0.1);      /* Фон для выигрышных ставок */
-    --loss-bg: rgba(244, 67, 54, 0.1);    /* Фон для проигрышных ставок */
-    --return-bg: rgba(255, 193, 7, 0.1);  /* Фон для возвращенных ставок */
+    --bg-dark: #121212;
+    --surface: #1e1e1e;
+    --surface-light: #2d2d2d;
+    --border: #333;
+    --text-primary: #d4d4d4;
+    --text-secondary: #999999;
+    --accent: #6e6e6e;
+    --accent-hover:#4169E1;
+    --positive: #4CAF50;
+    --negative: #f44336;
+    --neutral: #FFC107;
+    --win-bg: rgba(76, 175, 80, 0.1);
+    --loss-bg: rgba(244, 67, 54, 0.1);
+    --return-bg: rgba(255, 193, 7, 0.1);
 }
 
-/* Основные стили страницы */
 body {
-    font-family:  Arial, 'Segoe UI',sans-serif;  /* Шрифт по умолчанию */
-    background-color: var(--bg-dark);            /* Темный фон страницы */
-    color: var(--text-primary);                 /* Светлый цвет текста */
-    margin: 0;                                 /* Убираем отступы по умолчанию */
-    padding: 20px;                            /* Внутренние отступы страницы */
-    line-height: 1.6;                        /* Межстрочный интервал */
+    font-family: Arial, 'Segoe UI', sans-serif;
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    margin: 0;
+    padding: 20px;
+    line-height: 1.6;
 }
 
-/* Контейнер для центрирования контента */
 .container {
-    max-width: 1200px;   /* Максимальная ширина контента */
-    margin: 0 auto;     /* Центрирование по горизонтали */
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
-/* Заголовок страницы */
 h1 {
-    color: rgb(185, 184, 184); /* Цвет заголовка */
-    margin-top: 0;              /* Убираем отступ сверху */
-    text-align: center;         /* Выравнивание по центру */
-    font-size: 1.2rem;        /* Размер шрифта */
-    font-style: normal;      /* Обычное начертание */
-    font-family: 'Arial', 'Verdana', sans-serif;  /* Шрифт заголовка */
+    color: rgb(185, 184, 184);
+    margin-top: 0;
+    text-align: center;
+    font-size: 1.2rem;
+    font-style: normal;
+    font-family: 'Arial', 'Verdana', sans-serif;
 }
 
-/* Подзаголовки разделов */
 h2 {
-   color: rgb(185, 184, 184);  /* Цвет подзаголовка */
-   font-family: 'Arial', 'Verdana', sans-serif;  /* Шрифт */
-   font-weight: normal;       /* Нормальная толщина шрифта */
-   margin-top: 0;            /* Убираем отступ сверху */
-   text-align: left;        /* Выравнивание по левому краю */
-   font-size: 1.0rem;     /* Размер шрифта */
-   font-style: normal;   /* Обычное начертание */
+   color: rgb(185, 184, 184);
+   font-family: 'Arial', 'Verdana', sans-serif;
+   font-weight: normal;
+   margin-top: 0;
+   text-align: left;
+   font-size: 1.0rem;
+   font-style: normal;
 }
 
-/* Карточки - основные блоки интерфейса */
 .card {
-    background-color: var(--surface);       /* Фон карточки */
-    border-radius: 8px;                   /* Скругление углов */
-    padding: 20px;                      /* Внутренние отступы */
-    margin-bottom: 20px;               /* Отступ снизу */
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);  /* Тень карточки */
+    background-color: var(--surface);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
 
-/* Форма добавления ставки */
 .compact-form {
-    display: flex;          /* Гибкий контейнер */
-    align-items: center;    /* Выравнивание элементов по центру */
-    gap: 8px;             /* Расстояние между элементами */
-    flex-wrap: wrap;      /* Перенос на новую строку при нехватке места */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
 }
 
-/* Поле формы */
 .form-field {
-    position: relative;   /* Для позиционирования иконок */
-    display: flex;       /* Гибкий контейнер */
-    align-items: center; /* Выравнивание по центру */
-    flex: 1;           /* Растягивается на доступное пространство */
-    min-width: 90px;   /* Минимальная ширина поля */
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 90px;
 }
 
-/* Поле ввода */
 .compact-input {
-    width: 100%;                      /* Занимает всю доступную ширину */
-    padding: 10px;                   /* Внутренние отступы */
-    background: var(--surface-light); /* Фон поля */
-    border: 1px solid var(--border); /* Граница */
-    border-radius: 6px;             /* Скругление углов */
-    color: var(--text-primary);    /* Цвет текста */
-    font-size: 0.9rem;            /* Размер шрифта */
-    transition: all 0.01s ease;  /* Плавные анимации */
-    text-align: center;         /* Выравнивание текста по центру */
+    width: 100%;
+    padding: 10px;
+    background: var(--surface-light);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    transition: all 0.01s ease;
+    text-align: center;
 }
 
-/* Стили для поля ввода при фокусе */
 .compact-input:focus {
-    outline: none;                      /* Убираем стандартный outline */
-    border-color: var(--accent);       /* Изменяем цвет границы */
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0); /* Убираем тень */
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0);
 }
 
-/* Специальный класс для поля ввода даты */
 .date-input {
-    text-align: center;  /* Выравнивание по центру */
-
+    text-align: center;
 }
 
-
-/* Стиль только для поля события */
 #event {
-    padding-left: 30px; /* Отступ для иконки */
-    text-indent: 1px;  /* Отступ текста от иконки */
+    padding-left: 30px;
+    text-indent: 1px;
 }
 
-/* Настройка иконки только для этого поля */
 #event + .field-icon {
     left: 12px;
 }
 
-
-
-/* Выпадающий список */
 .compact-select {
-    width: 100%;                      /* Занимает всю доступную ширину */
-    padding: 10px 10px 10px 32px;    /* Отступы, слева больше для иконки */
-    background: var(--surface-light); /* Фон */
-    border: 1px solid var(--border); /* Граница */
-    border-radius: 6px;             /* Скругление углов */
-    color: var(--text-secondary);    /* Цвет текста */
-    font-size: 0.9rem;           /* Размер шрифта */
-    appearance: none;           /* Убираем стандартный вид */
-    cursor: pointer;           /* Курсор-указатель */
-    transition: all 0.2s ease; /* Плавные анимации */
-    text-align: center;       /* Выравнивание текста по центру */
-}
-
-/* Стили для выпадающего списка при фокусе */
-.compact-select:focus {
-    outline: none;                      /* Убираем стандартный outline */
-    border-color: var(--accent);       /* Изменяем цвет границы */
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0); /* Убираем тень */
-}
-
-/* Стили для выпадающего списка */
-.compact-select option {
-    outline: none;                      /* Убираем стандартный outline */
-    border-color: var(--accent);       /* Изменяем цвет границы */
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0); /* Убираем тень */
-    background: var(--surface-light); /* Фон */
-    color: var(--text-primary); /* Цвет текста пунктов */
-}
-
-/* Стиль для выбранного/деактивированного пункта */
-.compact-select option:disabled {
-    outline: none;                      /* Убираем стандартный outline */
-    border-color: var(--accent);       /* Изменяем цвет границы */
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0); /* Убираем тень */
-    background: var(--surface-light); /* Фон */
-    color: var(--text-primary); /* Цвет текста пунктов */
-    
-}
-
-/* Иконки внутри полей формы */
-.field-icon {
-    position: absolute;  /* Абсолютное позиционирование */
-    left: 10px;        /* Отступ слева */
-    color: var(--text-secondary);  /* Цвет иконки */
-    font-size: 0.9rem;           /* Размер иконки */
-    pointer-events: none;       /* Игнорирование кликов */
-}
-
-/* Кнопка добавления */
-.add-btn {
-    background-color: var(--surface-light);  /* Фон кнопки */
-    color: var(--text-primary);          /* Цвет текста */
+    width: 100%;
+    padding: 10px 10px 10px 32px;
+    background: var(--surface-light);
     border: 1px solid var(--border);
-    padding: 10px 15px;         /* Внутренние отступы */
-    border-radius: 6px;       /* Скругление углов */
-    cursor: pointer;          /* Курсор-указатель */
-    font-weight: 300;       /* Жирный шрифт */
-    font-size: 0.9rem;     /* Размер шрифта */
-    transition: all 0.1s ease;  /* Плавные анимации */
-    display: flex;         /* Гибкий контейнер */
-    align-items: center;  /* Выравнивание по центру */
-    gap: 8px;           /* Расстояние между иконкой и текстом */
-    white-space: nowrap; /* Запрет переноса текста */
-    margin-left: 0px;   /* Отступ слева */
+    border-radius: 6px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    appearance: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
 }
 
-/* Кнопка при наведении */
+.compact-select:focus {
+    outline: none;
+    border-color: var(--border);
+    box-shadow: none;
+}
+
+.compact-select option {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0);
+    background: var(--surface-light);
+    color: var(--text-primary);
+}
+
+.compact-select option:disabled {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0);
+    background: var(--surface-light);
+    color: var(--text-primary);
+}
+
+.field-icon {
+    position: absolute;
+    left: 10px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    pointer-events: none;
+}
+
+.add-btn {
+    background-color: var(--surface-light);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    padding: 10px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 300;
+    font-size: 0.9rem;
+    transition: all 0.1s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    margin-left: 0px;
+}
+
 .add-btn:hover {
-    background-color: var(--accent-hover);  /* Изменяем фон */
-    transform: translateY(-1px);           /* Легкий подъем */
+    background-color: var(--accent-hover);
+    transform: translateY(-1px);
 }
 
-/* Сообщение об ошибке */
 .error-tooltip {
-    position: absolute;     /* Абсолютное позиционирование */
-    top: 100%;            /* Под полем ввода */
-    left: 0;            /* Выравнивание по левому краю */
-    background: var(--negative);  /* Красный фон */
-    color: white;               /* Белый текст */
-    padding: 5px 8px;         /* Внутренние отступы */
-    border-radius: 4px;      /* Скругление углов */
-    font-size: 0.8rem;     /* Размер шрифта */
-    margin-top: 2px;      /* Отступ сверху */
-    z-index: 10;         /* Поверх других элементов */
-    display: none;      /* По умолчанию скрыт */
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: var(--negative);
+    color: white;
+    padding: 5px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    margin-top: 2px;
+    z-index: 10;
+    display: none;
 }
 
-/* Сетка для статистики */
 .stats-grid {
-    display: grid;                     /* Грид-контейнер */
-    grid-template-columns: repeat(4, 1fr);  /* 4 колонки */
-    gap: 15px;                       /* Расстояние между элементами */
-    margin-bottom: 15px;            /* Отступ снизу */
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    margin-bottom: 15px;
 }
 
-/* Карточка статистики */
 .stat-card {
-    background-color: var(--surface-light);  /* Фон */
-    border-radius: 6px;                    /* Скругление углов */
-    padding: 15px;                       /* Внутренние отступы */
-    text-align: center;                 /* Выравнивание по центру */
+    background-color: var(--surface-light);
+    border-radius: 6px;
+    padding: 15px;
+    text-align: center;
 }
 
-/* Заголовок карточки статистики */
 .stat-card h3 {
-    margin: 0 0 10px 0;              /* Отступы */
-    color: var(--text-secondary);   /* Цвет текста */
-    font-size: 1rem;               /* Размер шрифта */
+    margin: 0 0 10px 0;
+    color: var(--text-secondary);
+    font-size: 1rem;
 }
 
-/* Значение в карточке статистики */
 .stat-value {
-    font-size: 1.5rem;       /* Крупный шрифт */
-    font-weight: normal;     /* Нормальная толщина */
-    margin: 0;             /* Убираем отступы */
+    font-size: 1.5rem;
+    font-weight: normal;
+    margin: 0;
 }
 
-/* Таблица истории ставок */
 table {
-    width: 100%;           /* На всю ширину */
-    border-collapse: collapse;  /* Схлопывание границ */
-    margin-top: 15px;         /* Отступ сверху */
-    font-size: 0.9rem;       /* Размер шрифта */
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    font-size: 0.9rem;
 }
 
-/* Ячейки таблицы */
 th, td {
-    padding: 12px 15px;         /* Внутренние отступы */
-    text-align: left;          /* Выравнивание по левому краю */
-    border-bottom: 1px solid var(--border);  /* Граница снизу */
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
 }
 
-/* Заголовки таблицы */
 th {
-    background-color: var(--surface-light);  /* Фон */
-    color: var(--text-secondary);          /* Цвет текста */
-    position: sticky;                    /* Липкий заголовок */
-    top: 0;                            /* Прилипает к верху */
-    font-weight: 600;                 /* Полужирный шрифт */
+    background-color: var(--surface-light);
+    color: var(--text-secondary);
+    position: sticky;
+    top: 0;
+    font-weight: 600;
 }
 
-/* Эффект при наведении на строку */
 tr:hover {
-    background-color: var(--surface-light);  /* Подсветка */
+    background-color: var(--surface-light);
 }
 
-/* Стили для разных типов ставок */
 .win {
-    background-color: var(--win-bg);  /* Фон для выигрышей */
+    background-color: var(--win-bg);
 }
 
 .loss {
-    background-color: var(--loss-bg);  /* Фон для проигрышей */
+    background-color: var(--loss-bg);
 }
 
 .return {
-    background-color: var(--return-bg);  /* Фон для возвратов */
+    background-color: var(--return-bg);
 }
 
-/* Кнопки действий */
 .action-btn {
-    color: #888;             /* Цвет иконки */
-    transition: color 0.2s;  /* Плавное изменение цвета */
-    margin: 0 3px;          /* Отступы между кнопками */
-    text-decoration: none;  /* Убираем подчеркивание */
+    color: #888;
+    transition: color 0.2s;
+    margin: 0 3px;
+    text-decoration: none;
 }
 
-/* Кнопка при наведении */
 .action-btn:hover {
-    color: var(--accent-hover);  /* Акцентный цвет */
+    color: var(--accent-hover);
 }
 
 .delete-btn:hover {
-    color: var(--negative);  /* Красный цвет */
+    color: var(--negative);
 }
 
-/* График */
 .chart-img {
-    width: 100%;           /* На всю ширину */
-    height: auto;         /* Автоматическая высота */
-    max-height: 400px;   /* Максимальная высота */
-    object-fit: contain; /* Сохранять пропорции */
+    width: 100%;
+    height: auto;
+    max-height: 400px;
+    object-fit: contain;
 }
 
-/* Вспомогательные классы для цветов текста */
-.positive { color: var(--positive); }  /* Зеленый */
-.negative { color: var(--negative); }  /* Красный */
-.neutral { color: var(--neutral); }   /* Желтый */
-.text-center { text-align: center; }  /* Выравнивание по центру */
+.positive { color: var(--positive); }
+.negative { color: var(--negative); }
+.neutral { color: var(--neutral); }
+.text-center { text-align: center; }
 
-/* Стили для подвала */
 .footer {
     text-align: center;
     margin-top: 30px;
@@ -334,7 +291,6 @@ tr:hover {
     color: var(--accent-hover);
 }
 
-/* Кнопки Excel */
 .excel-buttons {
     display: flex;
     justify-content: flex-end;
@@ -365,22 +321,131 @@ tr:hover {
     font-size: 0.9rem;
 }
 
+/* Стили для фильтров */
+.filters-container {
+    margin-bottom: 15px;
+}
+
+.filters-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.filter-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+
+.filter-label {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+
+.filter-select {
+    background-color: var(--surface-light);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    min-width: 150px;
+}
+
+.filter-buttons {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.filter-apply-btn {
+    background-color: var(--surface-light);
+    color: var(--text-primary);
+    border: 0px solid var(--border);
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.1s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.filter-apply-btn:hover {
+    background-color: var(--surface-light);
+    border-color: var(--accent);
+}
+
+.filter-reset-btn {
+    background-color: var(--surface-light);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.1s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.filter-reset-btn:hover {
+    background-color: var(--surface-light);
+    border-color: var(--accent);
+}
+
+.coeff-range {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.coeff-input {
+    width: 70px;
+    padding: 6px;
+    background: var(--surface-light);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.coeff-input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.coeff-separator {
+    color: var(--text-secondary);
+}
+
 /* Пагинация */
 .pagination {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 10px;
-    margin-top: 20px;
-    padding: 15px 0;
+    margin-top: 15px;
+    padding: 10px 0;
 }
 
 .pagination-btn {
-    /* Уменьшаем padding */
-    padding: 4px 8px; /* Было 6px 12px */
-    /* Уменьшаем размер шрифта */
-    font-size: 0.8rem; /* Было 0.9rem */
-    /* Остальные свойства остаются без изменений */
+    padding: 2px 6px;
+    margin: 0 2px;
+    font-size: 0.7rem;
     background-color: var(--surface-light);
     color: var(--text-primary);
     border: 1px solid var(--border);
@@ -388,6 +453,11 @@ tr:hover {
     cursor: pointer;
     transition: all 0.1s ease;
     text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
 }
 
 .pagination-btn:hover:not(.disabled) {
@@ -399,61 +469,137 @@ tr:hover {
     cursor: not-allowed;
 }
 
-.page-number {
-    /* Уменьшаем padding */
-    padding: 4px 8px; /* Было 6px 12px */
-    /* Уменьшаем размер шрифта */
-    font-size: 0.8rem; /* Было 0.9rem */
-    /* Остальные свойства остаются без изменений */
-    background-color: var(--surface-light);
-    color: var(--text-primary);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.1s ease;
-    text-decoration: none;
-}
-
-.page-number {
-    background-color: var(--surface-light);
-    color: var(--text-primary);
-    border: 1px solid var(--border);
-    padding: 6px 12px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    transition: all 0.1s ease;
-    text-decoration: none;
-}
-
-.page-number:hover {
-    background-color: var(--surface);
-}
-
-.page-number.active {
+.pagination-btn.active {
     background-color: var(--accent-hover);
     color: white;
 }
 
-/* Адаптивность для средних экранов */
+.page-numbers {
+    display: flex;
+    gap: 3px;
+}
+
+/* Модальное окно */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 100;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+.modal-content {
+    background-color: var(--surface);
+    margin: 15% auto;
+    padding: 20px;
+    border-radius: 8px;
+    width: 300px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.modal-content h3 {
+    margin-top: 0;
+    color: var(--text-primary);
+    text-align: center;
+}
+
+#new-source-input {
+    width: 94%;
+    padding: 8px;
+    margin: 10px 0;
+    background: var(--surface-light);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.modal-btn {
+    background-color: var(--accent-hover);
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    width: 100%;
+    font-size: 0.9rem;
+    transition: all 0.1s ease;
+}
+
+.modal-btn:hover {
+    opacity: 0.9;
+}
+
+.close-modal {
+    color: var(--text-secondary);
+    float: right;
+    font-size: 1.5rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.close-modal:hover {
+    color: var(--text-primary);
+}
+
+.add-source-form-btn {
+    background-color: var(--surface-light);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px;
+    cursor: pointer;
+    transition: all 0.1s ease;
+    margin-left: 5px;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.add-source-form-btn:hover {
+    background-color: var(--accent-hover);
+    color: white;
+}
+
+/* Адаптивность */
 @media (max-width: 900px) {
     .stats-grid {
-        grid-template-columns: repeat(2, 1fr);  /* 2 колонки */
+        grid-template-columns: repeat(2, 1fr);
     }
     
     .compact-form {
-        gap: 10px;  /* Увеличиваем расстояние между полями */
+        gap: 10px;
     }
     
     .form-field {
-        min-width: 100%;  /* Поля на всю ширину */
+        min-width: 100%;
+    }
+    
+    .filter-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .filter-buttons {
+        margin-left: 0;
+        width: 100%;
+        justify-content: flex-end;
+    }
+    
+    .filter-select, .coeff-input {
+        width: 100%;
     }
 }
 
-/* Адаптивность для маленьких экранов */
 @media (max-width: 600px) {
     .stats-grid {
-        grid-template-columns: 1fr;  /* 1 колонка */
+        grid-template-columns: 1fr;
     }
     
     .excel-buttons {
@@ -464,3 +610,42 @@ tr:hover {
         flex-wrap: wrap;
     }
 }
+/* Добавлены новые стили для фильтров */
+.filters-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.filter-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.filter-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+/* Адаптивные стили для мобильных устройств */
+@media (max-width: 900px) {
+    .filters-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .filter-item {
+        width: 100%;
+    }
+    
+    .filter-buttons {
+        justify-content: center;
+        width: 100%;
+    }
+}
+
+/* Остальные стили остаются без изменений */

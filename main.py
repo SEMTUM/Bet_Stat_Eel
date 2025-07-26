@@ -12,6 +12,7 @@ import base64
 from collections import namedtuple
 import pandas as pd
 import eel
+import random
 
 # Функция для завершения дочерних процессов
 def kill_child_processes():
@@ -73,7 +74,8 @@ def init_db():
             coefficient REAL NOT NULL,
             bet_amount REAL NOT NULL,
             date DATE NOT NULL,
-            result TEXT NOT NULL
+            result TEXT NOT NULL,
+            source TEXT DEFAULT 'Не указан'
         )
     ''')
     conn.commit()
@@ -86,37 +88,80 @@ Stats = namedtuple('Stats', [
 ])
 
 @eel.expose
-def calculate_stats():
-    """Расчет статистики"""
+def get_sources():
+    """Получение списка источников"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT DISTINCT source FROM bets WHERE source IS NOT NULL AND source != 'Не указан'")
+    sources = [row['source'] for row in cursor.fetchall()]
+    conn.close()
+    return sources
+
+@eel.expose
+def calculate_stats(date_filter=None, coeff_filter=None, source_filter=None):
+    """Расчет статистики с фильтрами"""
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    cursor.execute('SELECT * FROM bets ORDER BY date ASC')
+    query = 'SELECT * FROM bets WHERE result != "pending"'
+    params = []
+    
+    # Применяем фильтры
+    if date_filter and date_filter != 'all':
+        if date_filter == 'current_month':
+            current_month = datetime.now().strftime('%Y-%m')
+            query += ' AND strftime("%Y-%m", date) = ?'
+            params.append(current_month)
+        else:
+            month_num = {
+                'january': '01', 'february': '02', 'march': '03',
+                'april': '04', 'may': '05', 'june': '06',
+                'july': '07', 'august': '08', 'september': '09',
+                'october': '10', 'november': '11', 'december': '12'
+            }.get(date_filter.lower(), None)
+            if month_num:
+                query += ' AND strftime("%m", date) = ?'
+                params.append(month_num)
+    
+    if coeff_filter and isinstance(coeff_filter, dict):
+        min_coeff = coeff_filter.get('min')
+        max_coeff = coeff_filter.get('max')
+        if min_coeff is not None and max_coeff is not None:
+            query += ' AND coefficient BETWEEN ? AND ?'
+            params.extend([min_coeff, max_coeff])
+    
+    if source_filter and source_filter != 'all':
+        if source_filter == 'Не указан':
+            query += ' AND (source IS NULL OR source = ?)'
+        else:
+            query += ' AND source = ?'
+        params.append(source_filter)
+    
+    query += ' ORDER BY date ASC'
+    cursor.execute(query, params)
     bets = cursor.fetchall()
     
-    # Фильтруем ставки, исключая те, что в ожидании
-    active_bets = [b for b in bets if b['result'] != 'pending']
-    total_bets = len(active_bets)
-    won_bets = len([b for b in active_bets if b['result'] == 'win'])
-    returned_bets = len([b for b in active_bets if b['result'] == 'return'])
+    total_bets = len(bets)
+    won_bets = len([b for b in bets if b['result'] == 'win'])
+    returned_bets = len([b for b in bets if b['result'] == 'return'])
     
     profit = sum(
         b['bet_amount'] * (b['coefficient'] - 1) if b['result'] == 'win' else
         -b['bet_amount'] if b['result'] == 'loss' else 0
-        for b in active_bets
+        for b in bets
     )
     
     pass_rate = (won_bets / (total_bets - returned_bets)) * 100 if (total_bets - returned_bets) > 0 else 0
     
-    total_invested = sum(b['bet_amount'] for b in active_bets if b['result'] != 'return')
+    total_invested = sum(b['bet_amount'] for b in bets if b['result'] != 'return')
     roi = (profit / total_invested) * 100 if total_invested > 0 else 0
     
-    avg_coefficient = sum(b['coefficient'] for b in active_bets) / total_bets if total_bets > 0 else 0
+    avg_coefficient = sum(b['coefficient'] for b in bets) / total_bets if total_bets > 0 else 0
     
     balance = 0
     max_balance = 0
     max_drawdown = 0
-    for b in active_bets:
+    for b in bets:
         if b['result'] == 'win':
             balance += b['bet_amount'] * (b['coefficient'] - 1)
         elif b['result'] == 'loss':
@@ -134,7 +179,7 @@ def calculate_stats():
     loss_streak = 0
     last_result = None
     
-    for b in active_bets:
+    for b in bets:
         if b['result'] == 'win':
             current_streak = current_streak + 1 if last_result == 'win' else 1
             win_streak = max(win_streak, current_streak)
@@ -146,7 +191,7 @@ def calculate_stats():
     
     balance_history = []
     current_balance = 0
-    for b in active_bets:
+    for b in bets:
         if b['result'] == 'win':
             current_balance += b['bet_amount'] * (b['coefficient'] - 1)
         elif b['result'] == 'loss':
@@ -170,12 +215,13 @@ def calculate_stats():
         'loss_streak': loss_streak
     }
     
-    bets_for_table = get_bets_for_table()
+    bets_for_table = get_bets_for_table(date_filter, coeff_filter, source_filter)
     
     return {
         'stats': stats_dict,
         'chart_url': chart_url,
-        'bets': bets_for_table
+        'bets': bets_for_table,
+        'sources': get_sources()
     }
 
 def generate_chart(balance_history):
@@ -245,13 +291,55 @@ def generate_chart(balance_history):
     
     return base64.b64encode(img.getvalue()).decode('utf-8')
 
-def get_bets_for_table():
-    """Получает ставки для отображения в таблице"""
+def get_bets_for_table(date_filter=None, coeff_filter=None, source_filter=None):
+    """Получает ставки для отображения в таблице с фильтрами"""
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # Изменено: добавлена сортировка по ID для записей с одинаковой датой
-    cursor.execute('SELECT * FROM bets ORDER BY date DESC, id DESC')
+    query = 'SELECT * FROM bets'
+    params = []
+    
+    # Применяем фильтры
+    if date_filter and date_filter != 'all':
+        if date_filter == 'current_month':
+            current_month = datetime.now().strftime('%Y-%m')
+            query += ' WHERE strftime("%Y-%m", date) = ?'
+            params.append(current_month)
+        else:
+            month_num = {
+                'january': '01', 'february': '02', 'march': '03',
+                'april': '04', 'may': '05', 'june': '06',
+                'july': '07', 'august': '08', 'september': '09',
+                'october': '10', 'november': '11', 'december': '12'
+            }.get(date_filter.lower(), None)
+            if month_num:
+                query += ' WHERE strftime("%m", date) = ?'
+                params.append(month_num)
+    
+    if coeff_filter and isinstance(coeff_filter, dict):
+        min_coeff = coeff_filter.get('min')
+        max_coeff = coeff_filter.get('max')
+        if min_coeff is not None and max_coeff is not None:
+            if 'WHERE' not in query:
+                query += ' WHERE'
+            else:
+                query += ' AND'
+            query += ' coefficient BETWEEN ? AND ?'
+            params.extend([min_coeff, max_coeff])
+    
+    if source_filter and source_filter != 'all':
+        if 'WHERE' not in query:
+            query += ' WHERE'
+        else:
+            query += ' AND'
+        if source_filter == 'Не указан':
+            query += ' (source IS NULL OR source = ?)'
+        else:
+            query += ' source = ?'
+        params.append(source_filter)
+    
+    query += ' ORDER BY date DESC, id DESC'
+    cursor.execute(query, params)
     bets = cursor.fetchall()
     
     bets_list = []
@@ -259,6 +347,7 @@ def get_bets_for_table():
         bet_dict = dict(bet)
         bet_date = datetime.strptime(bet_dict['date'], '%Y-%m-%d')
         bet_dict['formatted_date'] = bet_date.strftime('%d.%m.%Y')
+        bet_dict['source'] = bet_dict.get('source', 'Не указан')
         bets_list.append(bet_dict)
     
     conn.close()
@@ -272,18 +361,23 @@ def add_bet(bet_data):
         day, month, year = map(int, date_str.split('.'))
         date = f"{year}-{month:02d}-{day:02d}"
         
+        source = bet_data.get('source', 'Не указан')
+        if not source or source == 'Выберите источник':
+            source = 'Не указан'
+        
         conn = get_db_connection()
         cursor = conn.cursor()
         
         cursor.execute('''
-            INSERT INTO bets (event, coefficient, bet_amount, date, result)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO bets (event, coefficient, bet_amount, date, result, source)
+            VALUES (?, ?, ?, ?, ?, ?)
         ''', (
             bet_data['event'],
             float(bet_data['coefficient']),
             float(bet_data['bet_amount']),
             date,
-            bet_data['result']
+            bet_data['result'],
+            source
         ))
         
         conn.commit()
@@ -301,6 +395,10 @@ def update_bet(bet_id, bet_data):
         day, month, year = map(int, date_str.split('.'))
         date = f"{year}-{month:02d}-{day:02d}"
         
+        source = bet_data.get('source', 'Не указан')
+        if not source or source == 'Выберите источник':
+            source = 'Не указан'
+        
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -310,7 +408,8 @@ def update_bet(bet_id, bet_data):
                 coefficient = ?,
                 bet_amount = ?,
                 date = ?,
-                result = ?
+                result = ?,
+                source = ?
             WHERE id = ?
         ''', (
             bet_data['event'],
@@ -318,6 +417,7 @@ def update_bet(bet_id, bet_data):
             float(bet_data['bet_amount']),
             date,
             bet_data['result'],
+            source,
             bet_id
         ))
         
@@ -342,6 +442,7 @@ def get_bet(bet_id):
             bet_dict = dict(bet)
             bet_date = datetime.strptime(bet_dict['date'], '%Y-%m-%d')
             bet_dict['formatted_date'] = bet_date.strftime('%d.%m.%Y')
+            bet_dict['source'] = bet_dict.get('source', 'Не указан')
             conn.close()
             return {'success': True, 'bet': bet_dict}
         else:
@@ -378,26 +479,30 @@ def export_to_excel():
         
         data = []
         for bet in bets:
+            # Преобразуем sqlite3.Row в словарь
+            bet_dict = dict(bet)
+            
             profit = 0
-            if bet['result'] == 'win':
-                profit = bet['bet_amount'] * (bet['coefficient'] - 1)
-            elif bet['result'] == 'loss':
-                profit = -bet['bet_amount']
+            if bet_dict['result'] == 'win':
+                profit = bet_dict['bet_amount'] * (bet_dict['coefficient'] - 1)
+            elif bet_dict['result'] == 'loss':
+                profit = -bet_dict['bet_amount']
             
             result_text = {
                 'win': 'WIN',
                 'loss': 'LOSS',
                 'return': 'Возврат',
                 'pending': 'В ожидании'
-            }.get(bet['result'], bet['result'])
+            }.get(bet_dict['result'], bet_dict['result'])
             
             data.append({
-                'Дата': bet['date'],
-                'Спортивное Событие': bet['event'],
-                'КЭФ': bet['coefficient'],
-                'Сумма': bet['bet_amount'],
+                'Дата': bet_dict['date'],
+                'Спортивное Событие': bet_dict['event'],
+                'КЭФ': bet_dict['coefficient'],
+                'Сумма': bet_dict['bet_amount'],
                 'Результат': result_text,
-                'Доход': profit
+                'Доход': profit,
+                'Источник': bet_dict.get('source', 'Не указан')
             })
         
         df = pd.DataFrame(data)
@@ -449,15 +554,20 @@ def import_from_excel(excel_data):
                 elif result_text == 'в ожидании':
                     result_text = 'pending'
                 
+                source = str(row.get('Источник', 'Не указан'))
+                if not source or source.lower() == 'nan':
+                    source = 'Не указан'
+                
                 cursor.execute('''
-                    INSERT INTO bets (event, coefficient, bet_amount, date, result)
-                    VALUES (?, ?, ?, ?, ?)
+                    INSERT INTO bets (event, coefficient, bet_amount, date, result, source)
+                    VALUES (?, ?, ?, ?, ?, ?)
                 ''', (
                     str(row['Спортивное Событие']),
                     float(row['КЭФ']),
                     float(row['Сумма']),
                     date,
-                    result_text
+                    result_text,
+                    source
                 ))
             except Exception as e:
                 print(f"Ошибка обработки строки: {e}")
@@ -484,13 +594,16 @@ if __name__ == '__main__':
     check_and_create_db()
     
     try:
+        # Генерируем случайный порт между 8000 и 8999
+        port = random.randint(8000, 8999)
         eel.start('index.html',
                  size=(1200, 800),
                  mode='default',
                  host='localhost',
-                 port=8080,
+                 port=port,
                  close_callback=close_callback,
-                 suppress_error=True)
+                 suppress_error=True,
+                 cmdline_args=['--app', f'http://localhost:{port}'])
     except Exception as e:
         print(f"Ошибка при запуске: {e}")
     finally:
