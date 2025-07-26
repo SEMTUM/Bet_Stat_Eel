@@ -6,7 +6,7 @@
     --text-primary: #d4d4d4;
     --text-secondary: #999999;
     --accent: #6e6e6e;
-    --accent-hover:#4169E1;
+    --accent-hover:#006bbd;
     --positive: #4CAF50;
     --negative: #f44336;
     --neutral: #FFC107;
@@ -376,16 +376,17 @@ tr:hover {
     padding: 6px 12px;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     transition: all 0.1s ease;
     display: flex;
     align-items: center;
     gap: 6px;
+    text-decoration: none;
 }
 
 .filter-apply-btn:hover {
-    background-color: var(--surface-light);
-    border-color: var(--accent);
+    background-color: var(--accent-hover);
+    transform: translateY(-1px);
 }
 
 .filter-reset-btn {
@@ -395,16 +396,17 @@ tr:hover {
     padding: 6px 12px;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     transition: all 0.1s ease;
     display: flex;
     align-items: center;
     gap: 6px;
+    text-decoration: none;
 }
 
 .filter-reset-btn:hover {
-    background-color: var(--surface-light);
-    border-color: var(--accent);
+    background-color: var(--accent-hover);
+    transform: translateY(-1px);
 }
 
 .coeff-range {
@@ -433,51 +435,66 @@ tr:hover {
     color: var(--text-secondary);
 }
 
-/* Пагинация */
+/* Контейнер пагинации */
 .pagination {
     display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-top: 15px;
-    padding: 10px 0;
+    justify-content: center; /* Центрирование по горизонтали */
+    align-items: center;    /* Центрирование по вертикали */
+    margin-top: 15px;      /* Отступ сверху */
+    padding: 15px 0;       /* Внутренние отступы */
+    gap: 6px;              /* Равномерные отступы между элементами */
 }
 
+/* Стили для кнопок пагинации */
 .pagination-btn {
-    padding: 2px 6px;
-    margin: 0 2px;
-    font-size: 0.7rem;
-    background-color: var(--surface-light);
-    color: var(--text-primary);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.1s ease;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 22px;
-    height: 22px;
+    width: 32px;           /* Фиксированная ширина */
+    height: 32px;          /* Фиксированная высота */
+    padding: 0;            /* Убираем внутренние отступы */
+    margin: 0;             /* Убираем внешние отступы */
+    font-size: 0.8rem;     /* Размер шрифта */
+    background-color: var(--surface-light); /* Цвет фона */
+    color: var(--text-primary); /* Цвет текста */
+    border: 1px solid var(--border); /* Граница */
+    border-radius: 4px;    /* Закругление углов */
+    cursor: pointer;       /* Курсор-указатель */
+    transition: all 0.2s ease; /* Плавные анимации */
+    text-decoration: none; /* Убираем подчеркивание */
+    display: inline-flex;  /* Flex-контейнер */
+    align-items: center;   /* Центрирование по вертикали */
+    justify-content: center; /* Центрирование по горизонтали */
+    box-sizing: border-box; /* Учет границ в размерах */
 }
 
+/* Состояние при наведении */
 .pagination-btn:hover:not(.disabled) {
-    background-color: var(--accent-hover);
+    background-color: var(--accent-hover); /* Синий цвет фона */
+    transform: translateY(-1px); /* Эффект поднятия */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2); /* Тень */
 }
 
+/* Неактивная кнопка */
 .pagination-btn.disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+    opacity: 0.6;          /* Полупрозрачность */
+    cursor: not-allowed;   /* Курсор "недоступно" */
+    background-color: var(--surface); /* Другой фон */
 }
 
+/* Активная кнопка */
 .pagination-btn.active {
-    background-color: var(--accent-hover);
-    color: white;
+    background-color: var(--accent-hover); /* Синий фон */
+    color: white;         /* Белый текст */
+    font-weight: bold;    /* Жирный шрифт */
+    border-color: transparent; /* Прозрачная граница */
 }
 
+/* Контейнер номеров страниц */
 .page-numbers {
     display: flex;
-    gap: 3px;
+    gap: 6px;             /* Отступы между номерами */
+    margin: 0 8px;        /* Отступы по бокам */
 }
+
+
 
 /* Модальное окно */
 .modal {
