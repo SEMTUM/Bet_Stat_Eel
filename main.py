@@ -250,7 +250,8 @@ def get_bets_for_table():
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    cursor.execute('SELECT * FROM bets ORDER BY date DESC')
+    # Изменено: добавлена сортировка по ID для записей с одинаковой датой
+    cursor.execute('SELECT * FROM bets ORDER BY date DESC, id DESC')
     bets = cursor.fetchall()
     
     bets_list = []
