@@ -7,14 +7,15 @@ from datetime import datetime
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import numpy as np
 import io
 import base64
 from collections import namedtuple
 import pandas as pd
 import eel
 import random
+from matplotlib.lines import Line2D
 
-# Функция для завершения дочерних процессов
 def kill_child_processes():
     try:
         current_process = psutil.Process()
@@ -26,23 +27,18 @@ def kill_child_processes():
     except Exception as e:
         print(f"Ошибка при завершении процессов: {e}")
 
-# Регистрируем функцию завершения
 atexit.register(kill_child_processes)
 
-# Функция для корректного определения путей
 def resource_path(relative_path):
-    """Получает абсолютный путь для работы в dev и после компиляции"""
     try:
         base_path = sys._MEIPASS
     except Exception:
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
 
-# Инициализация Eel с правильными путями
 eel.init(resource_path('web'))
 
 def get_db_path():
-    """Возвращает правильный путь к базе данных"""
     if getattr(sys, 'frozen', False):
         application_path = os.path.dirname(sys.executable)
     else:
@@ -50,21 +46,18 @@ def get_db_path():
     return os.path.join(application_path, 'bets.db')
 
 def check_and_create_db():
-    """Проверяет наличие БД и создает новую при необходимости"""
     db_path = get_db_path()
     if not os.path.exists(db_path):
         print(f"База данных не найдена, создаем новую: {db_path}")
         init_db()
 
 def get_db_connection():
-    """Создает соединение с базой данных"""
     db_path = get_db_path()
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
 
 def init_db():
-    """Инициализация базы данных"""
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('''
@@ -89,7 +82,6 @@ Stats = namedtuple('Stats', [
 
 @eel.expose
 def get_sources():
-    """Получение списка источников"""
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT DISTINCT source FROM bets WHERE source IS NOT NULL AND source != 'Не указан'")
@@ -97,16 +89,97 @@ def get_sources():
     conn.close()
     return sources
 
+def calculate_balance_history(bets):
+    balance_history = []
+    current_balance = 0
+    for bet in bets:
+        if bet['result'] == 'win':
+            current_balance += bet['bet_amount'] * (bet['coefficient'] - 1)
+        elif bet['result'] == 'loss':
+            current_balance -= bet['bet_amount']
+        balance_history.append((bet['date'], current_balance))
+    return balance_history
+
+def generate_chart(main_history, sources_history):
+    if not main_history:
+        return None
+    
+    plt.style.use('dark_background')
+    fig, ax = plt.subplots(figsize=(20, 10), facecolor='#1e1e1e')
+    ax.set_facecolor('#1e1e1e')
+    
+    # Добавляем отступ сверху (10% от высоты графика)
+    plt.subplots_adjust(top=0.9)  # Было 1.0 по умолчанию
+    
+    colors = {
+        'main': '#5B8AE0',
+        'Не указан': '#888888'
+    }
+    
+    color_palette = plt.cm.tab20(np.linspace(0, 1, len(sources_history)))
+    for i, source in enumerate(sources_history.keys()):
+        if source not in colors and source != 'main':
+            colors[source] = color_palette[i]
+    
+    main_dates = [datetime.strptime(item[0], '%Y-%m-%d') for item in main_history]
+    main_balances = [item[1] for item in main_history]
+    
+    ax.plot(main_dates, main_balances, 
+           color=colors['main'],
+           linewidth=3,
+           alpha=0.9,
+           zorder=5,
+           label='Общий баланс')
+    
+    for source, history in sources_history.items():
+        if not history:
+            continue
+            
+        dates = [datetime.strptime(item[0], '%Y-%m-%d') for item in history]
+        balances = [item[1] for item in history]
+        
+        ax.plot(dates, balances,
+               color=colors.get(source, '#666666'),
+               linewidth=1.5,
+               alpha=0.6,
+               linestyle='--',
+               zorder=3,
+               label=source)
+    
+    ax.grid(True, color='#444', linestyle=':', alpha=0.4)
+    ax.axhline(0, color='#888', linestyle='--', linewidth=1.2, alpha=0.7, zorder=1)
+    
+    ax.tick_params(axis='both', colors="#8D8D8D", labelsize=12)
+    ax.xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter('%d.%m.%Y'))
+    ax.set_ylabel('Баланс', color='#d4d4d4', fontsize=12)
+    
+    # Переносим легенду вниз с отступом
+    ax.legend(loc='upper center',
+             bbox_to_anchor=(0.5, -0.1),  # Сдвигаем легенду ниже
+             facecolor='#1e1e1e',
+             edgecolor='#333',
+             fontsize=10,
+             ncol=3)  # 3 колонки для компактности
+    
+    img = io.BytesIO()
+    plt.savefig(img, 
+               format='png',
+               facecolor='#1e1e1e',
+               dpi=120,
+               bbox_inches='tight')
+    img.seek(0)
+    plt.close(fig)
+    
+    return base64.b64encode(img.getvalue()).decode('utf-8')
+
 @eel.expose
 def calculate_stats(date_filter=None, coeff_filter=None, source_filter=None):
-    """Расчет статистики с фильтрами"""
     conn = get_db_connection()
     cursor = conn.cursor()
     
     query = 'SELECT * FROM bets WHERE result != "pending"'
     params = []
     
-    # Применяем фильтры
     if date_filter and date_filter != 'all':
         if date_filter == 'current_month':
             current_month = datetime.now().strftime('%Y-%m')
@@ -189,18 +262,33 @@ def calculate_stats(date_filter=None, coeff_filter=None, source_filter=None):
         
         last_result = b['result']
     
-    balance_history = []
-    current_balance = 0
-    for b in bets:
-        if b['result'] == 'win':
-            current_balance += b['bet_amount'] * (b['coefficient'] - 1)
-        elif b['result'] == 'loss':
-            current_balance -= b['bet_amount']
-        balance_history.append((b['date'], current_balance))
+    main_history = calculate_balance_history(bets)
+    
+    sources = get_sources()
+    sources_history = {}
+    
+    for source in sources:
+        cursor.execute('''
+            SELECT date, result, bet_amount, coefficient 
+            FROM bets 
+            WHERE source = ? AND result != 'pending'
+            ORDER BY date ASC
+        ''', (source,))
+        source_bets = cursor.fetchall()
+        sources_history[source] = calculate_balance_history(source_bets)
+    
+    cursor.execute('''
+        SELECT date, result, bet_amount, coefficient 
+        FROM bets 
+        WHERE (source IS NULL OR source = 'Не указан') AND result != 'pending'
+        ORDER BY date ASC
+    ''')
+    unknown_bets = cursor.fetchall()
+    sources_history['Не указан'] = calculate_balance_history(unknown_bets)
+    
+    bets_for_table = get_bets_for_table(date_filter, coeff_filter, source_filter)
     
     conn.close()
-    
-    chart_url = generate_chart(balance_history) if balance_history else None
     
     stats_dict = {
         'total_profit': profit,
@@ -215,7 +303,7 @@ def calculate_stats(date_filter=None, coeff_filter=None, source_filter=None):
         'loss_streak': loss_streak
     }
     
-    bets_for_table = get_bets_for_table(date_filter, coeff_filter, source_filter)
+    chart_url = generate_chart(main_history, sources_history) if main_history else None
     
     return {
         'stats': stats_dict,
@@ -224,82 +312,14 @@ def calculate_stats(date_filter=None, coeff_filter=None, source_filter=None):
         'sources': get_sources()
     }
 
-def generate_chart(balance_history):
-    """Генерация графика баланса с улучшенной визуализацией"""
-    if not balance_history:
-        return None
-    
-    dates = [datetime.strptime(item[0], '%Y-%m-%d') for item in balance_history]
-    balances = [item[1] for item in balance_history]
-    
-    plt.style.use('dark_background')
-    fig, ax = plt.subplots(figsize=(20, 10), facecolor='#1e1e1e')
-    ax.set_facecolor('#1e1e1e')
-    
-    line, = ax.plot(dates, balances, 
-                   color="#5B8AE0",
-                   linewidth=3,
-                   alpha=0.9,
-                   marker='',
-                   markersize=1,
-                   markerfacecolor="#4169E194",
-                   markeredgecolor='white',
-                   markeredgewidth=1.5,
-                   linestyle='-',
-                   solid_capstyle='round',
-                   solid_joinstyle='round',
-                   zorder=3)
-    
-    ax.fill_between(dates, balances, min(balances) if min(balances) < 0 else 0,
-                   color="#4169E19E",
-                   alpha=0.10,
-                   interpolate=True)
-    
-    ax.grid(True,
-           color='#444',
-           linestyle=':',
-           alpha=0.4)
-    
-    for spine in ['bottom', 'top', 'right', 'left']:
-        ax.spines[spine].set_color('#666')
-        ax.spines[spine].set_linewidth(1.5)
-    
-    ax.tick_params(axis='both',
-                  colors="#8D8D8D",
-                  labelsize=22)
-    ax.tick_params(axis='both', which='major', pad=20)
-    ax.tick_params(axis='both', which='minor', pad=20)
-    
-    ax.xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter('%m.%Y'))
-    
-    zero_line = ax.axhline(0,
-                          color='#888',
-                          linestyle='--',
-                          linewidth=1.2,
-                          alpha=0.7,
-                          zorder=1)
-    
-    img = io.BytesIO()
-    plt.savefig(img, 
-               format='png',
-               facecolor='#1e1e1e',
-               dpi=120,
-               bbox_inches='tight',
-               transparent=False)
-    img.seek(0)
-    plt.close(fig)
-    
-    return base64.b64encode(img.getvalue()).decode('utf-8')
-
+@eel.expose
 def get_bets_for_table(date_filter=None, coeff_filter=None, source_filter=None):
-    """Получает ставки для отображения в таблице с фильтрами"""
     conn = get_db_connection()
     cursor = conn.cursor()
     
     query = 'SELECT * FROM bets'
     params = []
     
-    # Применяем фильтры
     if date_filter and date_filter != 'all':
         if date_filter == 'current_month':
             current_month = datetime.now().strftime('%Y-%m')
@@ -355,7 +375,6 @@ def get_bets_for_table(date_filter=None, coeff_filter=None, source_filter=None):
 
 @eel.expose
 def add_bet(bet_data):
-    """Добавление новой ставки"""
     try:
         date_str = bet_data['date'].replace(',', '.')
         day, month, year = map(int, date_str.split('.'))
@@ -389,7 +408,6 @@ def add_bet(bet_data):
 
 @eel.expose
 def update_bet(bet_id, bet_data):
-    """Обновление существующей ставки"""
     try:
         date_str = bet_data['date'].replace(',', '.')
         day, month, year = map(int, date_str.split('.'))
@@ -430,7 +448,6 @@ def update_bet(bet_id, bet_data):
 
 @eel.expose
 def get_bet(bet_id):
-    """Получение данных ставки по ID"""
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -454,7 +471,6 @@ def get_bet(bet_id):
 
 @eel.expose
 def delete_bet(bet_id):
-    """Удаление ставки"""
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -469,7 +485,6 @@ def delete_bet(bet_id):
 
 @eel.expose
 def export_to_excel():
-    """Экспорт в Excel"""
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -479,7 +494,6 @@ def export_to_excel():
         
         data = []
         for bet in bets:
-            # Преобразуем sqlite3.Row в словарь
             bet_dict = dict(bet)
             
             profit = 0
@@ -524,7 +538,6 @@ def export_to_excel():
 
 @eel.expose
 def import_from_excel(excel_data):
-    """Импорт из Excel"""
     try:
         excel_bytes = base64.b64decode(excel_data.split(',')[1])
         df = pd.read_excel(io.BytesIO(excel_bytes))
@@ -582,19 +595,16 @@ def import_from_excel(excel_data):
 
 @eel.expose
 def close_app():
-    """Явное завершение приложения"""
     kill_child_processes()
     os._exit(0)
 
 def close_callback(route, websockets):
-    """Обработчик закрытия окна"""
     close_app()
 
 if __name__ == '__main__':
     check_and_create_db()
     
     try:
-        # Генерируем случайный порт между 8000 и 8999
         port = random.randint(8000, 8999)
         eel.start('index.html',
                  size=(1200, 800),
