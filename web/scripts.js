@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const betsPerPage = 50;
     let allBets = [];
     let sources = [];
-    let months = [];
+    let allMonths = []; // Добавлено для хранения всех месяцев
 
     const modal = document.getElementById('source-modal');
     const addSourceFormBtn = document.getElementById('add-source-form-btn');
@@ -73,6 +73,20 @@ document.addEventListener('DOMContentLoaded', function() {
             allBets = data.bets;
             sources = data.sources;
             updateSourcesDropdown();
+            
+            // Сохраняем все месяцы при первой загрузке
+            if (allMonths.length === 0) {
+                const uniqueMonths = new Set();
+                allBets.forEach(function(bet) {
+                    const dateParts = bet.date.split('-');
+                    if (dateParts.length === 3) {
+                        const month = dateParts[1];
+                        uniqueMonths.add(month);
+                    }
+                });
+                allMonths = Array.from(uniqueMonths).sort((a, b) => b.localeCompare(a));
+            }
+            
             updateMonthsDropdown();
             updateBetsTable();
         } catch (error) {
@@ -125,16 +139,6 @@ document.addEventListener('DOMContentLoaded', function() {
             'october': '10', 'november': '11', 'december': '12'
         };
         
-        // Получаем уникальные месяцы из всех ставок
-        const uniqueMonths = new Set();
-        allBets.forEach(function(bet) {
-            const dateParts = bet.date.split('-');
-            if (dateParts.length === 3) {
-                const month = dateParts[1];
-                uniqueMonths.add(month);
-            }
-        });
-        
         const dateFilter = document.getElementById('date-filter');
         if (!dateFilter) return;
         
@@ -146,19 +150,17 @@ document.addEventListener('DOMContentLoaded', function() {
         
         dateFilter.innerHTML = '<option value="all">Все время</option>';
         
-        // Добавляем только те месяцы, для которых есть данные
-        Array.from(uniqueMonths)
-            .sort((a, b) => b.localeCompare(a)) // Сортируем по убыванию (новые сначала)
-            .forEach(function(month) {
-                if (monthNames[month]) {
-                    const option = document.createElement('option');
-                    // Находим ключ для числового значения месяца
-                    const monthKey = Object.keys(monthMapping).find(key => monthMapping[key] === month);
-                    option.value = monthKey;
-                    option.textContent = monthNames[month];
-                    dateFilter.appendChild(option);
-                }
-            });
+        // Используем сохраненный список всех месяцев
+        allMonths.forEach(function(month) {
+            if (monthNames[month]) {
+                const option = document.createElement('option');
+                // Находим ключ для числового значения месяца
+                const monthKey = Object.keys(monthMapping).find(key => monthMapping[key] === month);
+                option.value = monthKey;
+                option.textContent = monthNames[month];
+                dateFilter.appendChild(option);
+            }
+        });
         
         // Восстанавливаем выбранное значение, если оно существует
         if (selectedValue && Array.from(dateFilter.options).some(opt => opt.value === selectedValue)) {
