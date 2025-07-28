@@ -274,23 +274,11 @@ tr:hover {
     color: var(--negative);
 }
 
-#chart-container {
-    min-height: 500px;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;  /* Выравниваем содержимое по низу */
-    padding-bottom: 20px;       /* Дополнительный отступ снизу */
-}
-
 .chart-img {
     width: 100%;
     height: auto;
-    min-height: 400px;
-    max-height: 600px;
+    max-height: 400px;
     object-fit: contain;
-    background-color: var(--surface);
-    border-radius: 8px;
-    margin-top: auto;  /* Автоматический отступ сверху */
 }
 
 .positive { color: var(--positive); }
@@ -690,15 +678,4 @@ tr:hover {
         justify-content: center;
         width: 100%;
     }
-}
-
-
-.chart-img {
-    width: 100%;
-    height: auto;
-    max-height: 400px;
-    object-fit: contain;
-    background-color: var(--surface);
-    border-radius: 6px;
-    padding: 10px;
 }

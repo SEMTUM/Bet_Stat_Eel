@@ -21,6 +21,7 @@
         </div>
         
         <div class="card">
+            
             <form class="compact-form" id="bet-form">
                 <div class="form-field">
                     <input type="text" id="date" name="date" class="compact-input date-input" placeholder="дд.мм.гг" required>
@@ -81,8 +82,9 @@
         <div class="card">
             <h2></h2>
             
+            <!-- Основное изменение: переработана структура фильтров -->
             <div class="filters-container">
-                <div class="filters-row">
+                <div class="filters-row"> <!-- Изменено с filters-grid на filters-row -->
                     <div class="filter-item">
                         <span class="filter-label">Период:</span>
                         <select id="date-filter" class="filter-select">

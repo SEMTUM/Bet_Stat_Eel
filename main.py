@@ -3,18 +3,16 @@ import sys
 import sqlite3
 import atexit
 import psutil
-from datetime import datetime
+from datetime import datetime, timedelta
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import numpy as np
 import io
 import base64
 from collections import namedtuple
 import pandas as pd
 import eel
 import random
-from matplotlib.lines import Line2D
 
 def kill_child_processes():
     try:
@@ -89,89 +87,6 @@ def get_sources():
     conn.close()
     return sources
 
-def calculate_balance_history(bets):
-    balance_history = []
-    current_balance = 0
-    for bet in bets:
-        if bet['result'] == 'win':
-            current_balance += bet['bet_amount'] * (bet['coefficient'] - 1)
-        elif bet['result'] == 'loss':
-            current_balance -= bet['bet_amount']
-        balance_history.append((bet['date'], current_balance))
-    return balance_history
-
-def generate_chart(main_history, sources_history):
-    if not main_history:
-        return None
-    
-    plt.style.use('dark_background')
-    fig, ax = plt.subplots(figsize=(20, 10), facecolor='#1e1e1e')
-    ax.set_facecolor('#1e1e1e')
-    
-    # Добавляем отступ сверху (10% от высоты графика)
-    plt.subplots_adjust(top=1)  # Было 1.0 по умолчанию
-    
-    colors = {
-        'main': '#5B8AE0',
-        'Не указан': '#888888'
-    }
-    
-    color_palette = plt.cm.tab20(np.linspace(0, 1, len(sources_history)))
-    for i, source in enumerate(sources_history.keys()):
-        if source not in colors and source != 'main':
-            colors[source] = color_palette[i]
-    
-    main_dates = [datetime.strptime(item[0], '%Y-%m-%d') for item in main_history]
-    main_balances = [item[1] for item in main_history]
-    
-    ax.plot(main_dates, main_balances, 
-           color=colors['main'],
-           linewidth=3,
-           alpha=0.9,
-           zorder=5,
-           label='Общий баланс')
-    
-    for source, history in sources_history.items():
-        if not history:
-            continue
-            
-        dates = [datetime.strptime(item[0], '%Y-%m-%d') for item in history]
-        balances = [item[1] for item in history]
-        
-        ax.plot(dates, balances,
-               color=colors.get(source, '#666666'),
-               linewidth=1.5,
-               alpha=0.6,
-               linestyle='--',
-               zorder=3,
-               label=source)
-    
-    ax.grid(True, color='#444', linestyle=':', alpha=0.4)
-    ax.axhline(0, color='#888', linestyle='--', linewidth=1.2, alpha=0.7, zorder=1)
-    
-    ax.tick_params(axis='both', colors="#8D8D8D", labelsize=12)
-    ax.xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter('%d.%m.%Y'))
-    ax.set_ylabel('Баланс', color='#d4d4d4', fontsize=12)
-    
-    # Переносим легенду вниз с отступом
-    ax.legend(loc='upper center',
-             bbox_to_anchor=(0.5, -0.1),  # Сдвигаем легенду ниже
-             facecolor='#1e1e1e',
-             edgecolor='#333',
-             fontsize=10,
-             ncol=3)  # 3 колонки для компактности
-    
-    img = io.BytesIO()
-    plt.savefig(img, 
-               format='png',
-               facecolor='#1e1e1e',
-               dpi=120,
-               bbox_inches='tight')
-    img.seek(0)
-    plt.close(fig)
-    
-    return base64.b64encode(img.getvalue()).decode('utf-8')
-
 @eel.expose
 def calculate_stats(date_filter=None, coeff_filter=None, source_filter=None):
     conn = get_db_connection()
@@ -186,12 +101,13 @@ def calculate_stats(date_filter=None, coeff_filter=None, source_filter=None):
             query += ' AND strftime("%Y-%m", date) = ?'
             params.append(current_month)
         else:
-            month_num = {
+            month_mapping = {
                 'january': '01', 'february': '02', 'march': '03',
                 'april': '04', 'may': '05', 'june': '06',
                 'july': '07', 'august': '08', 'september': '09',
                 'october': '10', 'november': '11', 'december': '12'
-            }.get(date_filter.lower(), None)
+            }
+            month_num = month_mapping.get(date_filter.lower())
             if month_num:
                 query += ' AND strftime("%m", date) = ?'
                 params.append(month_num)
@@ -262,33 +178,18 @@ def calculate_stats(date_filter=None, coeff_filter=None, source_filter=None):
         
         last_result = b['result']
     
-    main_history = calculate_balance_history(bets)
-    
-    sources = get_sources()
-    sources_history = {}
-    
-    for source in sources:
-        cursor.execute('''
-            SELECT date, result, bet_amount, coefficient 
-            FROM bets 
-            WHERE source = ? AND result != 'pending'
-            ORDER BY date ASC
-        ''', (source,))
-        source_bets = cursor.fetchall()
-        sources_history[source] = calculate_balance_history(source_bets)
-    
-    cursor.execute('''
-        SELECT date, result, bet_amount, coefficient 
-        FROM bets 
-        WHERE (source IS NULL OR source = 'Не указан') AND result != 'pending'
-        ORDER BY date ASC
-    ''')
-    unknown_bets = cursor.fetchall()
-    sources_history['Не указан'] = calculate_balance_history(unknown_bets)
-    
-    bets_for_table = get_bets_for_table(date_filter, coeff_filter, source_filter)
+    balance_history = []
+    current_balance = 0
+    for b in bets:
+        if b['result'] == 'win':
+            current_balance += b['bet_amount'] * (b['coefficient'] - 1)
+        elif b['result'] == 'loss':
+            current_balance -= b['bet_amount']
+        balance_history.append((b['date'], current_balance))
     
     conn.close()
+    
+    chart_url = generate_chart(balance_history, date_filter) if balance_history else None
     
     stats_dict = {
         'total_profit': profit,
@@ -303,7 +204,7 @@ def calculate_stats(date_filter=None, coeff_filter=None, source_filter=None):
         'loss_streak': loss_streak
     }
     
-    chart_url = generate_chart(main_history, sources_history) if main_history else None
+    bets_for_table = get_bets_for_table(date_filter, coeff_filter, source_filter)
     
     return {
         'stats': stats_dict,
@@ -312,7 +213,75 @@ def calculate_stats(date_filter=None, coeff_filter=None, source_filter=None):
         'sources': get_sources()
     }
 
-@eel.expose
+def generate_chart(balance_history, date_filter=None):
+    if not balance_history:
+        return None
+    
+    dates = [datetime.strptime(item[0], '%Y-%m-%d') for item in balance_history]
+    balances = [item[1] for item in balance_history]
+    
+    plt.style.use('dark_background')
+    fig, ax = plt.subplots(figsize=(20, 10), facecolor='#1e1e1e')
+    ax.set_facecolor('#1e1e1e')
+    
+    line, = ax.plot(dates, balances, 
+                   color="#5B8AE0",
+                   linewidth=3,
+                   alpha=0.9,
+                   marker='',
+                   markersize=1,
+                   markerfacecolor="#4169E194",
+                   markeredgecolor='white',
+                   markeredgewidth=1.5,
+                   linestyle='-',
+                   solid_capstyle='round',
+                   solid_joinstyle='round',
+                   zorder=3)
+    
+    ax.fill_between(dates, balances, min(balances) if min(balances) < 0 else 0,
+                   color="#4169E19E",
+                   alpha=0.10,
+                   interpolate=True)
+    
+    ax.grid(True,
+           color='#444',
+           linestyle=':',
+           alpha=0.4)
+    
+    for spine in ['bottom', 'top', 'right', 'left']:
+        ax.spines[spine].set_color('#666')
+        ax.spines[spine].set_linewidth(1.5)
+    
+    ax.tick_params(axis='both',
+                  colors="#8D8D8D",
+                  labelsize=22)
+    ax.tick_params(axis='both', which='major', pad=20)
+    ax.tick_params(axis='both', which='minor', pad=20)
+    
+    if date_filter and date_filter != 'all':
+        ax.set_xlim([dates[0], dates[-1]])
+    
+    ax.xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter('%d.%m'))
+    
+    zero_line = ax.axhline(0,
+                          color='#888',
+                          linestyle='--',
+                          linewidth=1.2,
+                          alpha=0.7,
+                          zorder=1)
+    
+    img = io.BytesIO()
+    plt.savefig(img, 
+               format='png',
+               facecolor='#1e1e1e',
+               dpi=120,
+               bbox_inches='tight',
+               transparent=False)
+    img.seek(0)
+    plt.close(fig)
+    
+    return base64.b64encode(img.getvalue()).decode('utf-8')
+
 def get_bets_for_table(date_filter=None, coeff_filter=None, source_filter=None):
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -326,12 +295,13 @@ def get_bets_for_table(date_filter=None, coeff_filter=None, source_filter=None):
             query += ' WHERE strftime("%Y-%m", date) = ?'
             params.append(current_month)
         else:
-            month_num = {
+            month_mapping = {
                 'january': '01', 'february': '02', 'march': '03',
                 'april': '04', 'may': '05', 'june': '06',
                 'july': '07', 'august': '08', 'september': '09',
                 'october': '10', 'november': '11', 'december': '12'
-            }.get(date_filter.lower(), None)
+            }
+            month_num = month_mapping.get(date_filter.lower())
             if month_num:
                 query += ' WHERE strftime("%m", date) = ?'
                 params.append(month_num)

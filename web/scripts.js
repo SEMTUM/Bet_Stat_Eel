@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const betsPerPage = 50;
     let allBets = [];
     let sources = [];
-    let allMonths = []; // Добавлено для хранения всех месяцев
+    let allMonths = [];
 
     const modal = document.getElementById('source-modal');
     const addSourceFormBtn = document.getElementById('add-source-form-btn');
@@ -74,7 +74,6 @@ document.addEventListener('DOMContentLoaded', function() {
             sources = data.sources;
             updateSourcesDropdown();
             
-            // Сохраняем все месяцы при первой загрузке
             if (allMonths.length === 0) {
                 const uniqueMonths = new Set();
                 allBets.forEach(function(bet) {
@@ -144,28 +143,21 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const currentValue = dateFilter.value;
         
-        // Сохраняем текущее выбранное значение
-        const selectedOption = dateFilter.options[dateFilter.selectedIndex];
-        const selectedValue = selectedOption ? selectedOption.value : null;
+        dateFilter.innerHTML = '<option value="all">Все время</option><option value="current_month">Текущий месяц</option>';
         
-        dateFilter.innerHTML = '<option value="all">Все время</option>';
-        
-        // Используем сохраненный список всех месяцев
         allMonths.forEach(function(month) {
             if (monthNames[month]) {
-                const option = document.createElement('option');
-                // Находим ключ для числового значения месяца
                 const monthKey = Object.keys(monthMapping).find(key => monthMapping[key] === month);
-                option.value = monthKey;
-                option.textContent = monthNames[month];
-                dateFilter.appendChild(option);
+                if (monthKey) {
+                    const option = document.createElement('option');
+                    option.value = monthKey;
+                    option.textContent = monthNames[month];
+                    dateFilter.appendChild(option);
+                }
             }
         });
         
-        // Восстанавливаем выбранное значение, если оно существует
-        if (selectedValue && Array.from(dateFilter.options).some(opt => opt.value === selectedValue)) {
-            dateFilter.value = selectedValue;
-        } else if (currentValue && Array.from(dateFilter.options).some(opt => opt.value === currentValue)) {
+        if (currentValue && Array.from(dateFilter.options).some(opt => opt.value === currentValue)) {
             dateFilter.value = currentValue;
         }
     }
