@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const currentValue = dateFilter.value;
         
-        dateFilter.innerHTML = '<option value="all">Все время</option><option value="current_month">Текущий месяц</option>';
+        dateFilter.innerHTML = '<option value="all">Все время</option>';
         
         allMonths.forEach(function(month) {
             if (monthNames[month]) {
@@ -684,3 +684,4 @@ window.addEventListener('beforeunload', async function() {
         console.error("Ошибка при закрытии:", e);
     }
 });
+// .

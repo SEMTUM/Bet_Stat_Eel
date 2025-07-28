@@ -96,21 +96,16 @@ def calculate_stats(date_filter=None, coeff_filter=None, source_filter=None):
     params = []
     
     if date_filter and date_filter != 'all':
-        if date_filter == 'current_month':
-            current_month = datetime.now().strftime('%Y-%m')
-            query += ' AND strftime("%Y-%m", date) = ?'
-            params.append(current_month)
-        else:
-            month_mapping = {
-                'january': '01', 'february': '02', 'march': '03',
-                'april': '04', 'may': '05', 'june': '06',
-                'july': '07', 'august': '08', 'september': '09',
-                'october': '10', 'november': '11', 'december': '12'
-            }
-            month_num = month_mapping.get(date_filter.lower())
-            if month_num:
-                query += ' AND strftime("%m", date) = ?'
-                params.append(month_num)
+        month_mapping = {
+            'january': '01', 'february': '02', 'march': '03',
+            'april': '04', 'may': '05', 'june': '06',
+            'july': '07', 'august': '08', 'september': '09',
+            'october': '10', 'november': '11', 'december': '12'
+        }
+        month_num = month_mapping.get(date_filter.lower())
+        if month_num:
+            query += ' AND strftime("%m", date) = ?'
+            params.append(month_num)
     
     if coeff_filter and isinstance(coeff_filter, dict):
         min_coeff = coeff_filter.get('min')
@@ -179,13 +174,26 @@ def calculate_stats(date_filter=None, coeff_filter=None, source_filter=None):
         last_result = b['result']
     
     balance_history = []
+    daily_balances = {}
+    current_date = None
     current_balance = 0
+    
     for b in bets:
+        bet_date = datetime.strptime(b['date'], '%Y-%m-%d').date()
+        if current_date is None or bet_date != current_date:
+            if current_date is not None:
+                daily_balances[current_date] = current_balance
+            current_date = bet_date
+        
         if b['result'] == 'win':
             current_balance += b['bet_amount'] * (b['coefficient'] - 1)
         elif b['result'] == 'loss':
             current_balance -= b['bet_amount']
-        balance_history.append((b['date'], current_balance))
+    
+    if current_date is not None:
+        daily_balances[current_date] = current_balance
+    
+    balance_history = sorted([(date.strftime('%Y-%m-%d'), balance) for date, balance in daily_balances.items()], key=lambda x: x[0])
     
     conn.close()
     
@@ -224,7 +232,7 @@ def generate_chart(balance_history, date_filter=None):
     fig, ax = plt.subplots(figsize=(20, 10), facecolor='#1e1e1e')
     ax.set_facecolor('#1e1e1e')
     
-    line, = ax.plot(dates, balances, 
+    line, = ax.plot(dates[:-1], balances[:-1], 
                    color="#5B8AE0",
                    linewidth=3,
                    alpha=0.9,
@@ -237,6 +245,17 @@ def generate_chart(balance_history, date_filter=None):
                    solid_capstyle='round',
                    solid_joinstyle='round',
                    zorder=3)
+    
+    current_line, = ax.plot([dates[-2], dates[-1]], [balances[-2], balances[-1]], 
+                          color="#FFA500",
+                          linewidth=3,
+                          alpha=0.9,
+                          zorder=4)
+    
+    ax.scatter(dates[-1], balances[-1], 
+              color="#FFA500",
+              s=100,
+              zorder=5)
     
     ax.fill_between(dates, balances, min(balances) if min(balances) < 0 else 0,
                    color="#4169E19E",
@@ -290,21 +309,16 @@ def get_bets_for_table(date_filter=None, coeff_filter=None, source_filter=None):
     params = []
     
     if date_filter and date_filter != 'all':
-        if date_filter == 'current_month':
-            current_month = datetime.now().strftime('%Y-%m')
-            query += ' WHERE strftime("%Y-%m", date) = ?'
-            params.append(current_month)
-        else:
-            month_mapping = {
-                'january': '01', 'february': '02', 'march': '03',
-                'april': '04', 'may': '05', 'june': '06',
-                'july': '07', 'august': '08', 'september': '09',
-                'october': '10', 'november': '11', 'december': '12'
-            }
-            month_num = month_mapping.get(date_filter.lower())
-            if month_num:
-                query += ' WHERE strftime("%m", date) = ?'
-                params.append(month_num)
+        month_mapping = {
+            'january': '01', 'february': '02', 'march': '03',
+            'april': '04', 'may': '05', 'june': '06',
+            'july': '07', 'august': '08', 'september': '09',
+            'october': '10', 'november': '11', 'december': '12'
+        }
+        month_num = month_mapping.get(date_filter.lower())
+        if month_num:
+            query += ' WHERE strftime("%m", date) = ?'
+            params.append(month_num)
     
     if coeff_filter and isinstance(coeff_filter, dict):
         min_coeff = coeff_filter.get('min')
@@ -588,3 +602,4 @@ if __name__ == '__main__':
         print(f"Ошибка при запуске: {e}")
     finally:
         kill_child_processes()
+        #.
