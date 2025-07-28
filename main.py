@@ -283,15 +283,26 @@ def generate_chart(balance_history, date_filter=None, source_filter=None):
     
     # Настройка стиля и размера графика
     plt.style.use('dark_background')
-    fig, ax = plt.subplots(figsize=(22, 10), facecolor='#1e1e1e')  # Увеличили ширину графика
+    fig, ax = plt.subplots(figsize=(25, 12), facecolor='#1e1e1e')
     ax.set_facecolor('#1e1e1e')
     
     # Уменьшаем область графика для размещения легенды справа
     box = ax.get_position()
-    ax.set_position([box.x0, box.y0, box.width * 0.65, box.height])
+    ax.set_position([box.x0, box.y0, box.width * 0.90, box.height])
+    
+    # Определяем границы графика
+    first_date = dates[0]
+    last_main_date = dates[-1].date()
+    today = datetime.now().date()
+    xlim_right = max(datetime.combine(last_main_date, datetime.min.time()), 
+                    datetime.combine(today, datetime.min.time()))
+    
+    # Добавляем начальную точку (0) для всех графиков в первую дату
+    all_dates = [first_date] + dates
+    all_balances = [0] + balances
     
     # Основная линия баланса (главный график)
-    main_line, = ax.plot(dates, balances, 
+    main_line, = ax.plot(all_dates, all_balances, 
                        color="#5B8AE0",
                        linewidth=3,
                        alpha=0.9,
@@ -319,27 +330,22 @@ def generate_chart(balance_history, date_filter=None, source_filter=None):
         source_dates = [datetime.strptime(item[0], '%Y-%m-%d') for item in source_history]
         source_balances = [item[1] for item in source_history]
         
-        # Если сегодня не было ставок по этому источнику, добавляем точку с вчерашним значением
-        last_date = source_dates[-1].date()
-        today = datetime.now().date()
-        if last_date < today:
-            source_dates.append(datetime.combine(today, datetime.min.time()))
-            source_balances.append(source_balances[-1])
+        # Добавляем начальную точку (0) и точку на правый край
+        full_source_dates = [first_date] + source_dates + [xlim_right]
+        full_source_balances = [0] + source_balances + [source_balances[-1] if source_balances else 0]
         
         # Линия для конкретного источника (пунктирная)
-        line, = ax.plot(source_dates, source_balances,
+        line, = ax.plot(full_source_dates, full_source_balances,
                       color=source_colors[i % len(source_colors)],
                       linewidth=2.2,
-                      alpha=0.7,
+                      alpha=0.3,
                       linestyle='--',
                       zorder=2,
                       label=source)
         source_lines.append(line)
     
     # Подсветка последнего отрезка (зеленый/красный в зависимости от направления)
-    today = datetime.now().date()
-    last_date = dates[-1].date()
-    is_today = last_date == today
+    is_today = last_main_date == today
     is_month_filter = date_filter and date_filter != 'all'
     
     if len(dates) > 1 and (not is_month_filter or is_today):
@@ -357,7 +363,7 @@ def generate_chart(balance_history, date_filter=None, source_filter=None):
                   zorder=5)
     
     # Заливка под графиком
-    ax.fill_between(dates, balances, min(balances) if min(balances) < 0 else 0,
+    ax.fill_between(all_dates, all_balances, min(all_balances) if min(all_balances) < 0 else 0,
                    color="#4169E19E",
                    alpha=0.10,
                    interpolate=True)
@@ -376,13 +382,20 @@ def generate_chart(balance_history, date_filter=None, source_filter=None):
     # Настройка меток осей
     ax.tick_params(axis='both',
                   colors="#8D8D8D",
-                  labelsize=22)  # Увеличенный размер шрифта
-    ax.tick_params(axis='both', which='major', pad=20)
-    ax.tick_params(axis='both', which='minor', pad=20)
+                  labelsize=22)
+    ax.tick_params(axis='both', which='major', pad=26)
+    ax.tick_params(axis='both', which='minor', pad=26)
     
-    # Установка границ по X если выбран фильтр по месяцу
+# Настройка границ графика:
+# Без отступа слева, с уменьшенным отступом справа
+    right_padding = timedelta(hours=2)  # Можно регулировать (6-12 часов)
+
     if date_filter and date_filter != 'all':
-        ax.set_xlim([dates[0], dates[-1]])
+            ax.set_xlim([dates[0],  # Без отступа слева
+                dates[-1] + right_padding])  # Уменьшенный отступ справа
+    else:
+       ax.set_xlim([first_date,  # Без отступа слева
+                xlim_right + right_padding])  # Уменьшенный отступ справа
     
     # Формат даты на оси X
     ax.xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter('%d.%m'))
@@ -395,22 +408,30 @@ def generate_chart(balance_history, date_filter=None, source_filter=None):
                           alpha=0.7,
                           zorder=1)
     
-    # Легенда (увеличили шрифт до 18)
-    legend = ax.legend(loc='center left', 
-                      bbox_to_anchor=(1.02, 0.5),
-                      frameon=False,
-                      fontsize=18)  # Увеличенный размер шрифта
+    # Легенда
+    legend = ax.legend(
+        loc='center left', 
+        bbox_to_anchor=(1.05, 0.5),  # Увеличено с 1.02 до 1.05
+        frameon=False,
+        fontsize=18,
+        borderaxespad=1.5,  # Увеличиваем отступ от границы графика
+        borderpad=1.5       # Увеличиваем внутренние отступы легенды
+)
     
     # Цвет текста в легенде
     for text in legend.get_texts():
-        text.set_color('#d4d4d4')
+        text.set_color("#8D8D8D")     # Цвет текста (HEX, RGB или имя)
+        text.set_fontsize(26)         # Размер шрифта
+        text.set_fontweight('light')   # Жирность ('light', 'normal', 'bold', 'heavy')
+        text.set_fontstyle('normal')  # Стиль ('normal', 'italic', 'oblique')
+        text.set_fontfamily('Arial')  # Шрифт ('serif', 'sans-serif', 'monospace', 'cursive', 'fantasy')
     
     # Сохранение в PNG и возврат base64
     img = io.BytesIO()
     plt.savefig(img, 
                format='png',
                facecolor='#1e1e1e',
-               dpi=120,
+               dpi=250,
                bbox_inches='tight',
                transparent=False)
     img.seek(0)
@@ -719,4 +740,4 @@ if __name__ == '__main__':
         print(f"Ошибка при запуске: {e}")
     finally:
         kill_child_processes()
-        #..
+        #...
