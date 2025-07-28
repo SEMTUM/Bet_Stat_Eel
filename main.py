@@ -264,19 +264,33 @@ def calculate_stats(date_filter=None, coeff_filter=None, source_filter=None):
     }
 
 def generate_chart(balance_history, date_filter=None, source_filter=None):
+    """Генерирует график баланса с историей по всем источникам ставок.
+    
+    Args:
+        balance_history: Список кортежей (дата, баланс) для основного графика
+        date_filter: Фильтр по месяцу (если None или 'all' - отображаем все данные)
+        source_filter: Фильтр по источнику (если None или 'all' - отображаем все источники)
+    
+    Returns:
+        Base64-encoded PNG изображение графика или None если нет данных
+    """
     if not balance_history:
         return None
     
+    # Подготовка данных основного графика
     dates = [datetime.strptime(item[0], '%Y-%m-%d') for item in balance_history]
     balances = [item[1] for item in balance_history]
     
+    # Настройка стиля и размера графика
     plt.style.use('dark_background')
-    fig, ax = plt.subplots(figsize=(20, 10), facecolor='#1e1e1e')
+    fig, ax = plt.subplots(figsize=(22, 10), facecolor='#1e1e1e')  # Увеличили ширину графика
     ax.set_facecolor('#1e1e1e')
     
+    # Уменьшаем область графика для размещения легенды справа
     box = ax.get_position()
     ax.set_position([box.x0, box.y0, box.width * 0.65, box.height])
     
+    # Основная линия баланса (главный график)
     main_line, = ax.plot(dates, balances, 
                        color="#5B8AE0",
                        linewidth=3,
@@ -292,6 +306,7 @@ def generate_chart(balance_history, date_filter=None, source_filter=None):
                        zorder=3,
                        label='Общий баланс')
     
+    # Добавление графиков по источникам
     sources = get_sources()
     source_colors = plt.cm.tab20.colors
     source_lines = []
@@ -304,6 +319,14 @@ def generate_chart(balance_history, date_filter=None, source_filter=None):
         source_dates = [datetime.strptime(item[0], '%Y-%m-%d') for item in source_history]
         source_balances = [item[1] for item in source_history]
         
+        # Если сегодня не было ставок по этому источнику, добавляем точку с вчерашним значением
+        last_date = source_dates[-1].date()
+        today = datetime.now().date()
+        if last_date < today:
+            source_dates.append(datetime.combine(today, datetime.min.time()))
+            source_balances.append(source_balances[-1])
+        
+        # Линия для конкретного источника (пунктирная)
         line, = ax.plot(source_dates, source_balances,
                       color=source_colors[i % len(source_colors)],
                       linewidth=2.2,
@@ -313,6 +336,7 @@ def generate_chart(balance_history, date_filter=None, source_filter=None):
                       label=source)
         source_lines.append(line)
     
+    # Подсветка последнего отрезка (зеленый/красный в зависимости от направления)
     today = datetime.now().date()
     last_date = dates[-1].date()
     is_today = last_date == today
@@ -332,31 +356,38 @@ def generate_chart(balance_history, date_filter=None, source_filter=None):
                   s=100,
                   zorder=5)
     
+    # Заливка под графиком
     ax.fill_between(dates, balances, min(balances) if min(balances) < 0 else 0,
                    color="#4169E19E",
                    alpha=0.10,
                    interpolate=True)
     
+    # Настройка сетки
     ax.grid(True,
            color='#444',
            linestyle=':',
            alpha=0.4)
     
+    # Настройка границ графика
     for spine in ['bottom', 'top', 'right', 'left']:
         ax.spines[spine].set_color('#666')
         ax.spines[spine].set_linewidth(1.5)
     
+    # Настройка меток осей
     ax.tick_params(axis='both',
                   colors="#8D8D8D",
-                  labelsize=22)
+                  labelsize=22)  # Увеличенный размер шрифта
     ax.tick_params(axis='both', which='major', pad=20)
     ax.tick_params(axis='both', which='minor', pad=20)
     
+    # Установка границ по X если выбран фильтр по месяцу
     if date_filter and date_filter != 'all':
         ax.set_xlim([dates[0], dates[-1]])
     
+    # Формат даты на оси X
     ax.xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter('%d.%m'))
     
+    # Нулевая линия
     zero_line = ax.axhline(0,
                           color='#888',
                           linestyle='--',
@@ -364,14 +395,17 @@ def generate_chart(balance_history, date_filter=None, source_filter=None):
                           alpha=0.7,
                           zorder=1)
     
+    # Легенда (увеличили шрифт до 18)
     legend = ax.legend(loc='center left', 
                       bbox_to_anchor=(1.02, 0.5),
                       frameon=False,
-                      fontsize=16)
+                      fontsize=18)  # Увеличенный размер шрифта
     
+    # Цвет текста в легенде
     for text in legend.get_texts():
         text.set_color('#d4d4d4')
     
+    # Сохранение в PNG и возврат base64
     img = io.BytesIO()
     plt.savefig(img, 
                format='png',
@@ -685,4 +719,4 @@ if __name__ == '__main__':
         print(f"Ошибка при запуске: {e}")
     finally:
         kill_child_processes()
-        #.
+        #..
