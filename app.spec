@@ -36,7 +36,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='Bet Tracker',
+    name='Bet Tracker PRO',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
