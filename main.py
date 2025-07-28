@@ -88,6 +88,15 @@ def get_sources():
     return sources
 
 @eel.expose
+def get_available_months():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT DISTINCT strftime('%m', date) as month FROM bets ORDER BY month DESC")
+    months = [row['month'] for row in cursor.fetchall()]
+    conn.close()
+    return months
+
+@eel.expose
 def calculate_stats(date_filter=None, coeff_filter=None, source_filter=None):
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -213,12 +222,14 @@ def calculate_stats(date_filter=None, coeff_filter=None, source_filter=None):
     }
     
     bets_for_table = get_bets_for_table(date_filter, coeff_filter, source_filter)
+    available_months = get_available_months()
     
     return {
         'stats': stats_dict,
         'chart_url': chart_url,
         'bets': bets_for_table,
-        'sources': get_sources()
+        'sources': get_sources(),
+        'available_months': available_months
     }
 
 def generate_chart(balance_history, date_filter=None):
@@ -232,7 +243,7 @@ def generate_chart(balance_history, date_filter=None):
     fig, ax = plt.subplots(figsize=(20, 10), facecolor='#1e1e1e')
     ax.set_facecolor('#1e1e1e')
     
-    line, = ax.plot(dates[:-1], balances[:-1], 
+    line, = ax.plot(dates, balances, 
                    color="#5B8AE0",
                    linewidth=3,
                    alpha=0.9,
@@ -246,16 +257,24 @@ def generate_chart(balance_history, date_filter=None):
                    solid_joinstyle='round',
                    zorder=3)
     
-    current_line, = ax.plot([dates[-2], dates[-1]], [balances[-2], balances[-1]], 
-                          color="#FFA500",
-                          linewidth=3,
-                          alpha=0.9,
-                          zorder=4)
+    today = datetime.now().date()
+    last_date = dates[-1].date()
+    is_today = last_date == today
+    is_month_filter = date_filter and date_filter != 'all'
     
-    ax.scatter(dates[-1], balances[-1], 
-              color="#FFA500",
-              s=100,
-              zorder=5)
+    if len(dates) > 1 and (not is_month_filter or is_today):
+        last_color = "#4CAF50" if balances[-1] >= balances[-2] else "#f44336"
+        
+        current_line, = ax.plot([dates[-2], dates[-1]], [balances[-2], balances[-1]], 
+                              color=last_color,
+                              linewidth=3,
+                              alpha=0.9,
+                              zorder=4)
+        
+        ax.scatter(dates[-1], balances[-1], 
+                  color=last_color,
+                  s=100,
+                  zorder=5)
     
     ax.fill_between(dates, balances, min(balances) if min(balances) < 0 else 0,
                    color="#4169E19E",
@@ -602,4 +621,4 @@ if __name__ == '__main__':
         print(f"Ошибка при запуске: {e}")
     finally:
         kill_child_processes()
-        #.
+        #..

@@ -124,43 +124,44 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updateMonthsDropdown() {
-        const monthNames = {
-            '01': 'Январь', '02': 'Февраль', '03': 'Март', 
-            '04': 'Апрель', '05': 'Май', '06': 'Июнь',
-            '07': 'Июль', '08': 'Август', '09': 'Сентябрь',
-            '10': 'Октябрь', '11': 'Ноябрь', '12': 'Декабрь'
-        };
-        
-        const monthMapping = {
-            'january': '01', 'february': '02', 'march': '03',
-            'april': '04', 'may': '05', 'june': '06',
-            'july': '07', 'august': '08', 'september': '09',
-            'october': '10', 'november': '11', 'december': '12'
-        };
-        
-        const dateFilter = document.getElementById('date-filter');
-        if (!dateFilter) return;
-        
-        const currentValue = dateFilter.value;
-        
-        dateFilter.innerHTML = '<option value="all">Все время</option>';
-        
-        allMonths.forEach(function(month) {
-            if (monthNames[month]) {
-                const monthKey = Object.keys(monthMapping).find(key => monthMapping[key] === month);
-                if (monthKey) {
-                    const option = document.createElement('option');
-                    option.value = monthKey;
-                    option.textContent = monthNames[month];
-                    dateFilter.appendChild(option);
-                }
-            }
-        });
-        
-        if (currentValue && Array.from(dateFilter.options).some(opt => opt.value === currentValue)) {
-            dateFilter.value = currentValue;
+    const monthNames = {
+        '01': 'Январь', '02': 'Февраль', '03': 'Март', 
+        '04': 'Апрель', '05': 'Май', '06': 'Июнь',
+        '07': 'Июль', '08': 'Август', '09': 'Сентябрь',
+        '10': 'Октябрь', '11': 'Ноябрь', '12': 'Декабрь'
+    };
+    
+    const monthMapping = {
+        'january': '01', 'february': '02', 'march': '03',
+        'april': '04', 'may': '05', 'june': '06',
+        'july': '07', 'august': '08', 'september': '09',
+        'october': '10', 'november': '11', 'december': '12'
+    };
+    
+    const dateFilter = document.getElementById('date-filter');
+    if (!dateFilter) return;
+    
+    const currentValue = dateFilter.value;
+    
+    dateFilter.innerHTML = '<option value="all">Все время</option>';
+    
+    // Получаем доступные месяцы из данных
+    const availableMonths = allMonths || [];
+    
+    availableMonths.forEach(function(month) {
+        const monthKey = Object.keys(monthMapping).find(key => monthMapping[key] === month);
+        if (monthKey && monthNames[month]) {
+            const option = document.createElement('option');
+            option.value = monthKey;
+            option.textContent = monthNames[month];
+            dateFilter.appendChild(option);
         }
+    });
+    
+    if (currentValue && Array.from(dateFilter.options).some(opt => opt.value === currentValue)) {
+        dateFilter.value = currentValue;
     }
+}
 
     function updateStats(stats) {
         const statsGrid = document.getElementById('stats-grid');
@@ -684,4 +685,4 @@ window.addEventListener('beforeunload', async function() {
         console.error("Ошибка при закрытии:", e);
     }
 });
-// .
+// ..
