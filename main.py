@@ -109,7 +109,7 @@ def generate_chart(main_history, sources_history):
     ax.set_facecolor('#1e1e1e')
     
     # Добавляем отступ сверху (10% от высоты графика)
-    plt.subplots_adjust(top=0.9)  # Было 1.0 по умолчанию
+    plt.subplots_adjust(top=1)  # Было 1.0 по умолчанию
     
     colors = {
         'main': '#5B8AE0',
