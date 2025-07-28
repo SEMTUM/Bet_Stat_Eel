@@ -13,6 +13,7 @@ from collections import namedtuple
 import pandas as pd
 import eel
 import random
+from matplotlib.ticker import MaxNLocator
 
 def kill_child_processes():
     try:
@@ -95,6 +96,35 @@ def get_available_months():
     months = [row['month'] for row in cursor.fetchall()]
     conn.close()
     return months
+
+def get_source_balance_history(source):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    query = '''
+        SELECT date, result, coefficient, bet_amount 
+        FROM bets 
+        WHERE source = ? AND result != 'pending'
+        ORDER BY date ASC
+    '''
+    cursor.execute(query, (source,))
+    bets = cursor.fetchall()
+    
+    daily_balances = {}
+    current_balance = 0
+    
+    for bet in bets:
+        bet_date = datetime.strptime(bet['date'], '%Y-%m-%d').date()
+        
+        if bet['result'] == 'win':
+            current_balance += bet['bet_amount'] * (bet['coefficient'] - 1)
+        elif bet['result'] == 'loss':
+            current_balance -= bet['bet_amount']
+        
+        daily_balances[bet_date] = current_balance
+    
+    conn.close()
+    return sorted([(date.strftime('%Y-%m-%d'), balance) for date, balance in daily_balances.items()], key=lambda x: x[0])
 
 @eel.expose
 def calculate_stats(date_filter=None, coeff_filter=None, source_filter=None):
@@ -206,7 +236,7 @@ def calculate_stats(date_filter=None, coeff_filter=None, source_filter=None):
     
     conn.close()
     
-    chart_url = generate_chart(balance_history, date_filter) if balance_history else None
+    chart_url = generate_chart(balance_history, date_filter, source_filter) if balance_history else None
     
     stats_dict = {
         'total_profit': profit,
@@ -223,16 +253,17 @@ def calculate_stats(date_filter=None, coeff_filter=None, source_filter=None):
     
     bets_for_table = get_bets_for_table(date_filter, coeff_filter, source_filter)
     available_months = get_available_months()
+    sources = get_sources()
     
     return {
         'stats': stats_dict,
         'chart_url': chart_url,
         'bets': bets_for_table,
-        'sources': get_sources(),
+        'sources': sources,
         'available_months': available_months
     }
 
-def generate_chart(balance_history, date_filter=None):
+def generate_chart(balance_history, date_filter=None, source_filter=None):
     if not balance_history:
         return None
     
@@ -243,19 +274,44 @@ def generate_chart(balance_history, date_filter=None):
     fig, ax = plt.subplots(figsize=(20, 10), facecolor='#1e1e1e')
     ax.set_facecolor('#1e1e1e')
     
-    line, = ax.plot(dates, balances, 
-                   color="#5B8AE0",
-                   linewidth=3,
-                   alpha=0.9,
-                   marker='',
-                   markersize=1,
-                   markerfacecolor="#4169E194",
-                   markeredgecolor='white',
-                   markeredgewidth=1.5,
-                   linestyle='-',
-                   solid_capstyle='round',
-                   solid_joinstyle='round',
-                   zorder=3)
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * 0.65, box.height])
+    
+    main_line, = ax.plot(dates, balances, 
+                       color="#5B8AE0",
+                       linewidth=3,
+                       alpha=0.9,
+                       marker='',
+                       markersize=1,
+                       markerfacecolor="#4169E194",
+                       markeredgecolor='white',
+                       markeredgewidth=1.5,
+                       linestyle='-',
+                       solid_capstyle='round',
+                       solid_joinstyle='round',
+                       zorder=3,
+                       label='Общий баланс')
+    
+    sources = get_sources()
+    source_colors = plt.cm.tab20.colors
+    source_lines = []
+    
+    for i, source in enumerate(sources):
+        source_history = get_source_balance_history(source)
+        if not source_history:
+            continue
+            
+        source_dates = [datetime.strptime(item[0], '%Y-%m-%d') for item in source_history]
+        source_balances = [item[1] for item in source_history]
+        
+        line, = ax.plot(source_dates, source_balances,
+                      color=source_colors[i % len(source_colors)],
+                      linewidth=2.2,
+                      alpha=0.7,
+                      linestyle='--',
+                      zorder=2,
+                      label=source)
+        source_lines.append(line)
     
     today = datetime.now().date()
     last_date = dates[-1].date()
@@ -307,6 +363,14 @@ def generate_chart(balance_history, date_filter=None):
                           linewidth=1.2,
                           alpha=0.7,
                           zorder=1)
+    
+    legend = ax.legend(loc='center left', 
+                      bbox_to_anchor=(1.02, 0.5),
+                      frameon=False,
+                      fontsize=16)
+    
+    for text in legend.get_texts():
+        text.set_color('#d4d4d4')
     
     img = io.BytesIO()
     plt.savefig(img, 
@@ -621,4 +685,4 @@ if __name__ == '__main__':
         print(f"Ошибка при запуске: {e}")
     finally:
         kill_child_processes()
-        #..
+        #.
