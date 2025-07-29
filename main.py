@@ -263,181 +263,216 @@ def calculate_stats(date_filter=None, coeff_filter=None, source_filter=None):
         'available_months': available_months
     }
 
+
+
+##############################################################################################################
+
+
+
 def generate_chart(balance_history, date_filter=None, source_filter=None):
     """Генерирует график баланса с историей по всем источникам ставок.
     
     Args:
         balance_history: Список кортежей (дата, баланс) для основного графика
-        date_filter: Фильтр по месяцу (если None или 'all' - отображаем все данные)
-        source_filter: Фильтр по источнику (если None или 'all' - отображаем все источники)
+        date_filter: Фильтр по месяцу (None или 'all' - все данные)
+        source_filter: Фильтр по источнику (None или 'all' - все источники)
     
     Returns:
-        Base64-encoded PNG изображение графика или None если нет данных
+        Base64-encoded PNG изображение или None если нет данных
     """
+    
+    # Проверка наличия данных для построения графика
     if not balance_history:
         return None
     
-    # Подготовка данных основного графика
+    # Преобразование строковых дат в объекты datetime
     dates = [datetime.strptime(item[0], '%Y-%m-%d') for item in balance_history]
+    # Извлечение значений баланса
     balances = [item[1] for item in balance_history]
     
-    # Настройка стиля и размера графика
+    # Установка темного стиля графика
     plt.style.use('dark_background')
+    # Создание фигуры с указанным размером и цветом фона
     fig, ax = plt.subplots(figsize=(25, 12), facecolor='#1e1e1e')
+    # Установка цвета фона области графика
     ax.set_facecolor('#1e1e1e')
     
-    # Уменьшаем область графика для размещения легенды справа
+    # Получение текущих координат области графика
     box = ax.get_position()
-    ax.set_position([box.x0, box.y0, box.width * 0.90, box.height])
+    # Уменьшение ширины графика для места под легенду
+    ax.set_position([box.x0, box.y0, box.width * 0.98, box.height])
     
-    # Определяем границы графика
+    # Определение первой даты
     first_date = dates[0]
+    # Получение последней даты в данных (без времени)
     last_main_date = dates[-1].date()
+    # Текущая дата
     today = datetime.now().date()
+    # Определение правой границы графика (макс. из последней даты и сегодня)
     xlim_right = max(datetime.combine(last_main_date, datetime.min.time()), 
                     datetime.combine(today, datetime.min.time()))
     
-    # Добавляем начальную точку (0) для всех графиков в первую дату
+    # Добавление нулевой точки в начало данных
     all_dates = [first_date] + dates
     all_balances = [0] + balances
     
-    # Основная линия баланса (главный график)
+    # Построение основной линии графика (общий баланс)
     main_line, = ax.plot(all_dates, all_balances, 
-                       color="#5B8AE0",
-                       linewidth=3,
-                       alpha=0.9,
-                       marker='',
-                       markersize=1,
-                       markerfacecolor="#4169E194",
-                       markeredgecolor='white',
-                       markeredgewidth=1.5,
-                       linestyle='-',
-                       solid_capstyle='round',
-                       solid_joinstyle='round',
-                       zorder=3,
-                       label='Общий баланс')
+                       color="#5B8AE0",  # Синий цвет линии
+                       linewidth=3.5,      # Толщина линии
+                       alpha=1,        # Прозрачность
+                       marker='',        # Без маркеров
+                       markersize=1,     # Размер маркеров
+                       markerfacecolor="#4169E194",  # Цвет заливки маркера
+                       markeredgecolor='white',      # Цвет границы маркера
+                       markeredgewidth=1.5,          # Толщина границы маркера
+                       linestyle='-',    # Сплошная линия
+                       solid_capstyle='round',  # Закругленные концы линии
+                       solid_joinstyle='round', # Закругленные соединения
+                       zorder=3,         # Порядок отрисовки (выше других)
+                       label='Вся прибыль')  # Метка для легенды
     
-    # Добавление графиков по источникам
+    # Получение списка источников из базы данных
     sources = get_sources()
+    # Получение цветовой палитры для линий источников
     source_colors = plt.cm.tab20.colors
+    # Список для хранения линий источников
     source_lines = []
     
+    # Построение графиков для каждого источника
     for i, source in enumerate(sources):
+        # Получение истории баланса для конкретного источника
         source_history = get_source_balance_history(source)
         if not source_history:
             continue
             
+        # Преобразование дат и балансов источника
         source_dates = [datetime.strptime(item[0], '%Y-%m-%d') for item in source_history]
         source_balances = [item[1] for item in source_history]
         
-        # Добавляем начальную точку (0) и точку на правый край
+        # Добавление нулевой точки и точки на правый край
         full_source_dates = [first_date] + source_dates + [xlim_right]
         full_source_balances = [0] + source_balances + [source_balances[-1] if source_balances else 0]
         
-        # Линия для конкретного источника (пунктирная)
+        # Построение линии для источника (пунктирная)
         line, = ax.plot(full_source_dates, full_source_balances,
-                      color=source_colors[i % len(source_colors)],
-                      linewidth=2.2,
-                      alpha=0.3,
-                      linestyle='--',
-                      zorder=2,
-                      label=source)
+                      color=source_colors[i % len(source_colors)],  # Цвет из палитры
+                      linewidth=1.5,     # Толщина линии
+                      alpha=1,           # Прозрачность
+                      linestyle='--',    # Пунктирная линия
+                      zorder=2,          # Порядок отрисовки (ниже основной)
+                      label=source)      # Метка для легенды
         source_lines.append(line)
     
-    # Подсветка последнего отрезка (зеленый/красный в зависимости от направления)
+    # Проверка, является ли последняя дата сегодняшним днем
     is_today = last_main_date == today
+    # Проверка, применен ли фильтр по месяцу
     is_month_filter = date_filter and date_filter != 'all'
     
+    # Подсветка последнего отрезка (если данных больше 1 и не фильтр по месяцу или сегодня)
     if len(dates) > 1 and (not is_month_filter or is_today):
+        # Выбор цвета в зависимости от направления изменения баланса
         last_color = "#4CAF50" if balances[-1] >= balances[-2] else "#f44336"
         
+        # Построение выделенного отрезка
         current_line, = ax.plot([dates[-2], dates[-1]], [balances[-2], balances[-1]], 
                               color=last_color,
                               linewidth=3,
                               alpha=0.9,
-                              zorder=4)
+                              zorder=4)  # Выше основной линии
         
+        # Добавление точки на последнее значение
         ax.scatter(dates[-1], balances[-1], 
                   color=last_color,
-                  s=100,
-                  zorder=5)
+                  s=150,         # Размер точки
+                  zorder=5)      # Выше всех линий
     
-    # Заливка под графиком
+    # Заливка области под графиком
     ax.fill_between(all_dates, all_balances, min(all_balances) if min(all_balances) < 0 else 0,
-                   color="#4169E19E",
-                   alpha=0.10,
-                   interpolate=True)
+                   color="#4169E19E",  # Цвет заливки
+                   alpha=0.05,         # Прозрачность
+                   interpolate=True)   # Сглаживание
     
     # Настройка сетки
     ax.grid(True,
-           color='#444',
-           linestyle=':',
-           alpha=0.4)
+           color='#444',       # Цвет линий сетки
+           linestyle=':',      # Точечный стиль
+           alpha=0.5)          # Прозрачность
     
     # Настройка границ графика
     for spine in ['bottom', 'top', 'right', 'left']:
-        ax.spines[spine].set_color('#666')
-        ax.spines[spine].set_linewidth(1.5)
+        ax.spines[spine].set_color('#444')  # Цвет границ
+        ax.spines[spine].set_linewidth(2.0) # Толщина границ
     
     # Настройка меток осей
     ax.tick_params(axis='both',
-                  colors="#8D8D8D",
-                  labelsize=22)
+                  colors="#999999",  # Цвет меток
+                  labelsize=24)       # Размер шрифта
+    # Отступы для основных и второстепенных меток
     ax.tick_params(axis='both', which='major', pad=26)
     ax.tick_params(axis='both', which='minor', pad=26)
     
-# Настройка границ графика:
-# Без отступа слева, с уменьшенным отступом справа
-    right_padding = timedelta(hours=2)  # Можно регулировать (6-12 часов)
-
+    # Настройка границ графика по X
+    right_padding = timedelta(hours=2)  # Отступ справа (2 часа)
     if date_filter and date_filter != 'all':
-            ax.set_xlim([dates[0],  # Без отступа слева
-                dates[-1] + right_padding])  # Уменьшенный отступ справа
+        # Для фильтра по месяцу - от первой до последней даты + отступ
+        ax.set_xlim([dates[0], dates[-1] + right_padding])
     else:
-       ax.set_xlim([first_date,  # Без отступа слева
-                xlim_right + right_padding])  # Уменьшенный отступ справа
+        # Для общего графика - от первой даты до сегодня + отступ
+        ax.set_xlim([first_date, xlim_right + right_padding])
     
-    # Формат даты на оси X
+    # Формат отображения дат на оси X (день.месяц)
     ax.xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter('%d.%m'))
     
-    # Нулевая линия
+    # Горизонтальная линия нуля
     zero_line = ax.axhline(0,
-                          color='#888',
-                          linestyle='--',
-                          linewidth=1.2,
-                          alpha=0.7,
-                          zorder=1)
+                          color='#888',      # Цвет линии
+                          linestyle='--',    # Пунктир
+                          linewidth=1.5,     # Толщина
+                          alpha=0.3,         # Прозрачность
+                          zorder=1)          # Ниже всех
     
-    # Легенда
+    # Создание и настройка легенды
     legend = ax.legend(
-        loc='center left', 
-        bbox_to_anchor=(1.05, 0.5),  # Увеличено с 1.02 до 1.05
-        frameon=False,
-        fontsize=18,
-        borderaxespad=1.5,  # Увеличиваем отступ от границы графика
-        borderpad=1.5       # Увеличиваем внутренние отступы легенды
-)
+        loc='center left',          # Позиционирование
+        bbox_to_anchor=(1.05, 0.5), # Смещение относительно графика
+        frameon=True,               # Без рамки
+        fontsize=26,                # Размер шрифта
+        framealpha=1.0,             # Прозрачность рамки (0-1)
+        edgecolor='#444',           # Цвет границы
+        facecolor='#1e1e1e',      # Цвет фона
+        borderpad=2.0,              # Внутренний отступ (в пунктах)
+        borderaxespad=2.0)          # Отступ от границ график
+        
+    legend.get_frame().set_linewidth(2)              
     
-    # Цвет текста в легенде
+    # Настройка стиля текста в легенде
     for text in legend.get_texts():
-        text.set_color("#8D8D8D")     # Цвет текста (HEX, RGB или имя)
+        text.set_color("#999999")     # Цвет текста
         text.set_fontsize(26)         # Размер шрифта
-        text.set_fontweight('light')   # Жирность ('light', 'normal', 'bold', 'heavy')
-        text.set_fontstyle('normal')  # Стиль ('normal', 'italic', 'oblique')
-        text.set_fontfamily('Arial')  # Шрифт ('serif', 'sans-serif', 'monospace', 'cursive', 'fantasy')
+        text.set_fontweight('normal')  # Насыщенность
+        text.set_fontstyle('normal')  # Стиль
+        text.set_fontfamily('Arial')  # Шрифт
+        
     
-    # Сохранение в PNG и возврат base64
+    # Сохранение графика в буфер
     img = io.BytesIO()
     plt.savefig(img, 
-               format='png',
-               facecolor='#1e1e1e',
-               dpi=250,
-               bbox_inches='tight',
-               transparent=False)
-    img.seek(0)
-    plt.close(fig)
+               format='png',          # Формат изображения
+               facecolor='#1e1e1e',   # Цвет фона
+               dpi=100,               # Разрешение
+               bbox_inches='tight',   # Обрезка пустых областей
+               transparent=False)     # Непрозрачный фон
+    img.seek(0)  # Перемотка буфера в начало
+    plt.close(fig)  # Закрытие фигуры
     
+    # Возврат base64-encoded изображения
     return base64.b64encode(img.getvalue()).decode('utf-8')
+
+
+###############################################################################################
+
+
 
 def get_bets_for_table(date_filter=None, coeff_filter=None, source_filter=None):
     conn = get_db_connection()
@@ -740,4 +775,4 @@ if __name__ == '__main__':
         print(f"Ошибка при запуске: {e}")
     finally:
         kill_child_processes()
-        #....
+        #.....
